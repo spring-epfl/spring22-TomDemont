@@ -2,7 +2,7 @@
 
 {% block content %}
 <h1>
-    Hi, {{ user.username }}!
+    Hi, {{ current_user.username }}!
 </h1>
 {% for match in matches %}
 <div>
@@ -10,7 +10,7 @@
         {{ match.attacker.username }} vs. {{ match.defender.username }}
     </p>
     <p>
-        {{match.result}}
+        Score: {{match.attacker_score}}
     </p>
 </div>
 {% endfor %}
