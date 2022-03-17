@@ -1,6 +1,8 @@
 # spring22-TomDemont
 Repository for Tom Demont semester project: Privacy Competition Platform for [SecretStroll](https://github.com/spring-epfl/CS-523-public/tree/master/secretstroll) project in CS-523.
 
+The database model can be found under `srs_model.xml` and can be visualized on the tool [https://ondras.zarovi.cz/sql/demo/](https://ondras.zarovi.cz/sql/demo/).
+
 ## Run instructions
 ### Setup of virtual environment
 Once in the cloned folder, I suggest you create a python virtual environment for this project:
