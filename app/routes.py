@@ -10,7 +10,7 @@ from werkzeug.urls import url_parse
 @app.route("/index")
 @login_required
 def index():
-    matches = MatchResult.query.all()
+    matches = MatchResult.get_best_matches()
     return render_template("index.html", title="Home", matches=matches)
 
 
