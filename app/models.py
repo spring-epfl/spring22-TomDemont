@@ -41,6 +41,7 @@ class User(UserMixin, db.Model):
 
     # we don't create the "defended" method as we in any case have both users in scope
     def attacked(self, other_user, score=0.0):
+        """Records the attack of self on another user and self's score for this attack"""
         if isinstance(other_user, User):
             m = MatchResult(
                 attacker_id=self.id, defender_id=other_user.id, attacker_score=score
