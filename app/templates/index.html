@@ -1,17 +1,28 @@
 {% extends "base.html" %}
+{% import 'bootstrap/wtf.html' as wtf %}
 
-{% block content %}
+{% block app_content %}
 <h1>
     Best matches
 </h1>
-Find here the best matches of the competition! If an attacker attacks twice the same person, only their best score is taken into account and displayed here.
+Find here the best matches of the competition! If an attacker attacks twice the same person, only their best score is
+taken into account and displayed here.
+<hr>
 {% for match in matches %}
 {% include '_match.html' %}
 {% endfor %}
-{% if prev_url %}
-<a href="{{ prev_url }}">Newer matches</a>
-{% endif %}
-{% if next_url %}
-<a href="{{ next_url }}">Older matches</a>
-{% endif %}
+<nav aria-label="...">
+    <ul class="pager">
+        <li class="previous{% if not prev_url %} disabled{% endif %}">
+            <a href="{{ prev_url or '#' }}">
+                <span aria-hidden="true">&larr;</span> Newer matches
+            </a>
+        </li>
+        <li class="next{% if not next_url %} disabled{% endif %}">
+            <a href="{{ next_url or '#' }}">
+                Older matches <span aria-hidden="true">&rarr;</span>
+            </a>
+        </li>
+    </ul>
+</nav>
 {% endblock %}

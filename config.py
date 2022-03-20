@@ -16,4 +16,4 @@ class Config(object):
     MAIL_USERNAME = os.environ.get('MAIL_USERNAME')
     MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
     ADMINS = ['tom.demont@epfl.ch']
-    MATCHS_PER_PAGE = 7
+    MATCHS_PER_PAGE = 3
