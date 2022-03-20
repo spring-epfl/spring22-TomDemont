@@ -2,9 +2,16 @@
 
 {% block content %}
 <h1>
-    Hi, {{ current_user.username }}!
+    Best matches
 </h1>
+Find here the best matches of the competition! If an attacker attacks twice the same person, only their best score is taken into account and displayed here.
 {% for match in matches %}
 {% include '_match.html' %}
 {% endfor %}
+{% if prev_url %}
+<a href="{{ prev_url }}">Newer matches</a>
+{% endif %}
+{% if next_url %}
+<a href="{{ next_url }}">Older matches</a>
+{% endif %}
 {% endblock %}

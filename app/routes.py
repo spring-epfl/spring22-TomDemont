@@ -10,8 +10,19 @@ from werkzeug.urls import url_parse
 @app.route("/index")
 @login_required
 def index():
-    matches = MatchResult.get_best_matches()
-    return render_template("index.html", title="Home", matches=matches)
+    page = request.args.get("page", 1, type=int)
+    matches = MatchResult.get_best_matches().paginate(
+        page, app.config["MATCHS_PER_PAGE"], False
+    )
+    next_url = url_for("index", page=matches.next_num) if matches.has_next else None
+    prev_url = url_for("index", page=matches.prev_num) if matches.has_prev else None
+    return render_template(
+        "index.html",
+        title="Home",
+        matches=matches.items,
+        next_url=next_url,
+        prev_url=prev_url,
+    )
 
 
 @app.route("/register", methods=["GET", "POST"])
@@ -58,5 +69,22 @@ def logout():
 @login_required
 def user(username):
     user = User.query.filter_by(username=username).first_or_404()
-    matches = user.attacks
-    return render_template("user.html", user=user, matches=matches)
+    page = request.args.get("page", 1, type=int)
+    matches = user.attacks.paginate(page, app.config["MATCHS_PER_PAGE"], False)
+    next_url = (
+        url_for("user", username=current_user.username, page=matches.next_num)
+        if matches.has_next
+        else None
+    )
+    prev_url = (
+        url_for("user", username=current_user.username, page=matches.prev_num)
+        if matches.has_prev
+        else None
+    )
+    return render_template(
+        "user.html",
+        user=user,
+        matches=matches.items,
+        next_url=next_url,
+        prev_url=prev_url,
+    )

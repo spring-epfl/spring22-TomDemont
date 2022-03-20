@@ -66,10 +66,10 @@ class UserModelCase(unittest.TestCase):
         m6 = u3.attacked(u4, 1.5)
 
         true_bests = [m5, m3, m2]
-        bests_from_func = MatchResult.get_best_matches()
+        bests_from_func = MatchResult.get_best_matches().all()
         self.assertEqual(bests_from_func, true_bests)
-        self.assertEqual(u1.get_best_attacks(), [m2])
-        self.assertEqual(u3.get_best_attacks(), [m5])
+        self.assertEqual(u1.get_best_attacks().all(), [m2])
+        self.assertEqual(u3.get_best_attacks().all(), [m5])
 
 
 if __name__ == "__main__":

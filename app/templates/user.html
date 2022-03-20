@@ -6,4 +6,10 @@
 {% for match in matches %}
 {% include '_match.html' %}
 {% endfor %}
+{% if prev_url %}
+<a href="{{ prev_url }}">Newer matches</a>
+{% endif %}
+{% if next_url %}
+<a href="{{ next_url }}">Older matches</a>
+{% endif %}
 {% endblock %}

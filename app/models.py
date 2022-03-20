@@ -28,20 +28,23 @@ class User(UserMixin, db.Model):
         """Returns only the best match of matchings with this user as attacker. Namely, it discards tuples that have the same attacker (being self) and defender but have a lower scores than the others"""
         best_match_and_score_for_self = (
             db.session.query(
-                MatchResult,
+                MatchResult.id,
                 func.max(MatchResult.attacker_score),
             )
             .filter(MatchResult.attacker_id == self.id)
             .group_by(MatchResult.attacker_id, MatchResult.defender_id)
             .order_by(MatchResult.timestamp.desc())
-            .all()
+            .subquery()
         )
         # we remove the second column that was used for aggregation
-        return list(map(lambda a: a[0], best_match_and_score_for_self))
+        return db.session.query(MatchResult).join(
+            best_match_and_score_for_self,
+            MatchResult.id == best_match_and_score_for_self.c.id,
+        )
 
     # we don't create the "defended" method as we in any case have both users in scope
     def attacked(self, other_user, score=0.0):
-        """Records the attack of self on another user and self's score for this attack"""
+        """Records the attack of self on another user and self's score for this attack. Returns the attack object added to database"""
         if isinstance(other_user, User):
             m = MatchResult(
                 attacker_id=self.id, defender_id=other_user.id, attacker_score=score
@@ -78,17 +81,20 @@ class MatchResult(db.Model):
     @staticmethod
     def get_best_matches():
         """Returns only the best match of every matching. Namely, it discards tuples that have the same attacker and defender but have a lower scores than the others"""
-        bests_matchs_and_score = (
+        best_match_and_score = (
             db.session.query(
-                MatchResult,
+                MatchResult.id,
                 func.max(MatchResult.attacker_score),
             )
             .group_by(MatchResult.attacker_id, MatchResult.defender_id)
             .order_by(MatchResult.timestamp.desc())
-            .all()
+            .subquery()
         )
         # we remove the second column that was used for aggregation
-        return list(map(lambda a: a[0], bests_matchs_and_score))
+        return db.session.query(MatchResult).join(
+            best_match_and_score,
+            MatchResult.id == best_match_and_score.c.id,
+        )
 
     def __repr__(self):
         return "<Match on {} (id: {}) - {} attacked {} and scored {}>".format(

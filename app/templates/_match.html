@@ -3,9 +3,16 @@
         <td>{{ match.timestamp }}</td>
     </tr>
     <tr valign="top">
-        <td>{{ match.attacker.username }} attacked {{ match.defender.username }}</td>
+        <td>
+            <a href="{{ url_for('user', username=match.attacker.username) }}">
+                {{ match.attacker.username }}</a> attacked
+            <a href="{{ url_for('user', username=match.defender.username) }}">{{ match.defender.username }} </a>
+        </td>
     </tr>
     <tr valign="top">
-        <td>{{ match.attacker.username }} scored <b>{{ match.attacker_score }}</b></td>
+        <td>
+            <a href="{{ url_for('user', username=match.attacker.username) }}"> {{ match.attacker.username }}</a>
+            scored <b>{{ match.attacker_score }}</b>
+        </td>
     </tr>
 </table>
