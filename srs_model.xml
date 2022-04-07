@@ -37,10 +37,12 @@
 		<type label="SET" length="1" sql="SET" quote=""/>
 		<type label="Bit" length="0" sql="bit" quote=""/>
 	</group>
-</datatypes><table x="388" y="200" name="User">
+</datatypes><table x="574" y="232" name="User">
 <row name="id" null="1" autoincrement="1">
 <datatype>INTEGER</datatype>
-<default>NULL</default></row>
+<default>NULL</default><relation table="Team" row="member_1" />
+<relation table="Team" row="member_2" />
+</row>
 <row name="username" null="1" autoincrement="0">
 <datatype>VARCHAR(64)</datatype>
 <default>NULL</default></row>
@@ -50,32 +52,116 @@
 <row name="pwd_hash" null="1" autoincrement="0">
 <datatype>VARCHAR(64)</datatype>
 <default>NULL</default></row>
+<row name="sciper" null="0" autoincrement="0">
+<datatype>INTEGER</datatype>
+</row>
 <key type="PRIMARY" name="">
 <part>id</part>
+</key>
+<key type="UNIQUE" name="">
+<part>username</part>
+</key>
+<key type="UNIQUE" name="">
+<part>email</part>
+</key>
+<key type="UNIQUE" name="">
+<part>sciper</part>
 </key>
 <comment>stores the student users of SRS</comment>
 </table>
-<table x="680" y="193" name="MatchResults">
+<table x="758" y="231" name="Team">
 <row name="id" null="1" autoincrement="1">
 <datatype>INTEGER</datatype>
-<default>NULL</default></row>
-<row name="timestamp" null="1" autoincrement="0">
-<datatype>TIMESTAMP</datatype>
-<default>NULL</default></row>
-<row name="attacker_id" null="1" autoincrement="0">
-<datatype>INTEGER</datatype>
-<default>NULL</default><relation table="User" row="id" />
+<default>NULL</default><relation table="Defence" row="defender_team" />
 </row>
-<row name="defender_id" null="1" autoincrement="0">
+<row name="team_name" null="1" autoincrement="0">
+<datatype>VARCHAR(64)</datatype>
+<default>NULL</default></row>
+<row name="member_1" null="1" autoincrement="0">
 <datatype>INTEGER</datatype>
-<default>NULL</default><relation table="User" row="id" />
-</row>
-<row name="attacker_score" null="1" autoincrement="0">
-<datatype>FLOAT</datatype>
+<default>NULL</default></row>
+<row name="member_2" null="1" autoincrement="0">
+<datatype>INTEGER</datatype>
 <default>NULL</default></row>
 <key type="PRIMARY" name="">
 <part>id</part>
 </key>
-<comment>stores the results of the matchs</comment>
+<key type="UNIQUE" name="">
+<part>member_1</part>
+<part>member_2</part>
+</key>
+<key type="UNIQUE" name="">
+<part>team_name</part>
+</key>
+<comment>Represents a team of users</comment>
+</table>
+<table x="935" y="134" name="Defence">
+<row name="id" null="1" autoincrement="1">
+<datatype>INTEGER</datatype>
+<default>NULL</default></row>
+<row name="defender_team" null="1" autoincrement="0">
+<datatype>INTEGER</datatype>
+<default>NULL</default></row>
+<row name="utility_score" null="1" autoincrement="0">
+<datatype>FLOAT</datatype>
+<default>0.0</default></row>
+<row name="timestamp" null="1" autoincrement="0">
+<datatype>TIMESTAMP</datatype>
+<default>NULL</default></row>
+<row name="round" null="1" autoincrement="0">
+<datatype>INTEGER</datatype>
+<default>NULL</default></row>
+<key type="PRIMARY" name="">
+<part>id</part>
+</key>
+<key type="UNIQUE" name="">
+<part>defender_team</part>
+</key>
+<comment>Identifies the defence training set of a team</comment>
+</table>
+<table x="947" y="323" name="Match">
+<row name="id" null="1" autoincrement="1">
+<datatype>INTEGER</datatype>
+<default>NULL</default></row>
+<row name="attacker_id" null="1" autoincrement="0">
+<datatype>INTEGER</datatype>
+<default>NULL</default><relation table="Team" row="id" />
+</row>
+<row name="defender_id" null="1" autoincrement="0">
+<datatype>INTEGER</datatype>
+<default>NULL</default><relation table="Team" row="id" />
+</row>
+<row name="round" null="1" autoincrement="0">
+<datatype>INTEGER</datatype>
+<default>NULL</default></row>
+<key type="PRIMARY" name="">
+<part>id</part>
+</key>
+<key type="UNIQUE" name="">
+<part>attacker_id</part>
+<part>defender_id</part>
+<part>round</part>
+</key>
+<comment>Records the matches that are assigned to teams</comment>
+</table>
+<table x="1127" y="228" name="Attack">
+<row name="id" null="1" autoincrement="1">
+<datatype>INTEGER</datatype>
+<default>NULL</default></row>
+<row name="matching_id" null="1" autoincrement="0">
+<datatype>INTEGER</datatype>
+<default>NULL</default><relation table="Match" row="id" />
+</row>
+<row name="results" null="1" autoincrement="0">
+<datatype>BLOB</datatype>
+<default>NULL</default><comment>PICKLE type</comment>
+</row>
+<row name="timestamp" null="1" autoincrement="0">
+<datatype>TIMESTAMP</datatype>
+<default>NULL</default></row>
+<key type="PRIMARY" name="">
+<part>id</part>
+</key>
+<comment>The classification the attacker produced on the defender</comment>
 </table>
 </sql>
