@@ -2,7 +2,7 @@ from flask import flash, redirect, render_template, request, url_for
 from app import app, db
 from app.forms import LoginForm, RegistrationForm
 from flask_login import current_user, login_required, login_user, logout_user
-from app.models import User, MatchResult
+from app.models import User, Match
 from werkzeug.urls import url_parse
 
 
@@ -11,7 +11,7 @@ from werkzeug.urls import url_parse
 @login_required
 def index():
     page = request.args.get("page", 1, type=int)
-    matches = MatchResult.get_best_matches().paginate(
+    matches = db.session.query(Match).paginate(
         page, app.config["MATCHS_PER_PAGE"], False
     )
     next_url = url_for("index", page=matches.next_num) if matches.has_next else None
@@ -70,7 +70,7 @@ def logout():
 def user(username):
     user = User.query.filter_by(username=username).first_or_404()
     page = request.args.get("page", 1, type=int)
-    matches = user.attacks.paginate(page, app.config["MATCHS_PER_PAGE"], False)
+    matches = user.team().attacks().paginate(page, app.config["MATCHS_PER_PAGE"], False)
     next_url = (
         url_for("user", username=current_user.username, page=matches.next_num)
         if matches.has_next

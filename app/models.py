@@ -1,10 +1,12 @@
-from typing import Any
-from app import login
 from datetime import datetime
-from werkzeug.security import generate_password_hash, check_password_hash
-from app import db
+from typing import Any
+
 from flask_login import UserMixin
 from sqlalchemy import func, or_
+from sqlalchemy.orm import Query
+from werkzeug.security import check_password_hash, generate_password_hash
+
+from app import db, login
 
 
 class User(UserMixin, db.Model):
@@ -20,51 +22,6 @@ class User(UserMixin, db.Model):
             .filter(or_(Team.member1_id == self.id, Team.member2_id == self.id))
             .first()
         )
-
-    # attacks = db.relationship(
-    #     "MatchResult",
-    #     backref="attacker",
-    #     foreign_keys="MatchResult.attacker_id",
-    #     lazy="dynamic",
-    # )
-    # defenses = db.relationship(
-    #     "MatchResult",
-    #     backref="defender",
-    #     foreign_keys="MatchResult.defender_id",
-    #     lazy="dynamic",
-    # )
-
-    # def get_best_attacks(self):
-    #     """Returns only the best match of matchings with this user as attacker. Namely, it discards tuples that have the same attacker (being self) and defender but have a lower scores than the others"""
-    #     best_match_and_score_for_self = (
-    #         db.session.query(
-    #             MatchResult.id,
-    #             func.max(MatchResult.attacker_score),
-    #         )
-    #         .filter(MatchResult.attacker_id == self.id)
-    #         .group_by(MatchResult.attacker_id, MatchResult.defender_id)
-    #         .order_by(MatchResult.timestamp.desc())
-    #         .subquery()
-    #     )
-    #     # we remove the second column that was used for aggregation
-    #     return db.session.query(MatchResult).join(
-    #         best_match_and_score_for_self,
-    #         MatchResult.id == best_match_and_score_for_self.c.id,
-    #     )
-
-    # # we don't create the "defended" method as we in any case have both users in scope
-    # def attacked(self, other_user, score=0.0):
-    #     """Records the attack of self on another user and self's score for this attack. Returns the attack object added to database"""
-    #     if isinstance(other_user, User) and other_user.id != self.id:
-    #         # we ensure users cannot attack themselves
-    #         m = MatchResult(
-    #             attacker_id=self.id, defender_id=other_user.id, attacker_score=score
-    #         )
-    #         db.session.add(m)
-    #         db.session.commit()
-    #         return m
-    #     else:
-    #         raise TypeError("Users can only attack other users")
 
     def set_password(self, password: str) -> None:
         # basically hashes with random salt using PBKDF2, see https://werkzeug.palletsprojects.com/en/2.0.x/utils/#module-werkzeug.security
@@ -115,9 +72,15 @@ class Team(db.Model):
             db.session.query(User).filter(User.id == self.member2_id).first(),
         )
 
-    def attacks(self) -> list[Any]:
-        # TODO
-        db.session.query(Attack).join()
+    def attacks(self) -> Query:
+        self_attacks = (
+            db.session.query(Match.id)
+            .filter(Match.attacker_team_id == self.id)
+            .subquery()
+        )
+        return db.session.query(Attack).join(
+            self_attacks, self_attacks.c.id == Attack.match_id
+        )
 
     def __repr__(self) -> str:
         return "<Team {} (id: {})>".format(self.team_name, self.id)
@@ -142,7 +105,7 @@ class Defence(db.Model):
     round = db.Column(db.Integer, index=True)
 
     def __repr__(self) -> str:
-        return "<Defence of {} utility {} (id: {})>".format(self.defender_team, self.id)
+        return "<Defence of {} (id: {})>".format(self.defender_team, self.id)
 
 
 class Match(db.Model):
@@ -157,6 +120,13 @@ class Match(db.Model):
             "round",
             name="_match_pair_once_per_round",
         ),
+    )
+
+    attacks = db.relationship(
+        "Attack",
+        backref="match",
+        foreign_keys="Attack.match_id",
+        lazy="dynamic",
     )
 
     def __repr__(self) -> str:
@@ -182,33 +152,5 @@ class Attack(db.Model):
     results = db.Column(db.PickleType)
     timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow)
 
-
-# class MatchResult(db.Model):
-#     id = db.Column(db.Integer, primary_key=True)
-#     timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow)
-#     attacker_id = db.Column(db.Integer, db.ForeignKey("user.id"))
-#     defender_id = db.Column(db.Integer, db.ForeignKey("user.id"))
-#     attacker_score = db.Column(db.Float, default=0.0)
-
-#     @staticmethod
-#     def get_best_matches():
-#         """Returns only the best match of every matching. Namely, it discards tuples that have the same attacker and defender but have a lower scores than the others"""
-#         best_match_and_score = (
-#             db.session.query(
-#                 MatchResult.id,
-#                 func.max(MatchResult.attacker_score),
-#             )
-#             .group_by(MatchResult.attacker_id, MatchResult.defender_id)
-#             .order_by(MatchResult.timestamp.desc())
-#             .subquery()
-#         )
-#         # we remove the second column that was used for aggregation
-#         return db.session.query(MatchResult).join(
-#             best_match_and_score,
-#             MatchResult.id == best_match_and_score.c.id,
-#         )
-
-#     def __repr__(self):
-#         return "<Match on {} (id: {}) - {} attacked {} and scored {}>".format(
-#             self.timestamp, self.id, self.attacker, self.defender, self.attacker_score
-#         )
+    def __repr__(self) -> str:
+        return "<Attack - for match {} (id: {})".format(self.match, self.id)
