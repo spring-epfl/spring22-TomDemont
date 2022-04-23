@@ -12,3 +12,11 @@ def internal_error(error):
     # avoid having database in bad state
     db.session.rollback()
     return render_template("500.html"), 500
+
+@app.errorhandler(403)
+def forbidden_error(error):
+    return render_template("403.html"), 403
+
+@app.errorhandler(400)
+def bad_request_error(error):
+    return render_template("400.html"), 400

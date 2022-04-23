@@ -1,12 +1,20 @@
 <table class="table table-hover">
     <tr>
+        <th>Attacker Team</th>
+        <th>Defender Team</th>
+        <th>Rounds</th>
+    </tr>
+    <tr>
         <td>
-            <a href="{{ url_for('user', username=match.attacker.username) }}">
-                {{ match.attacker.username }}</a> attacked
-            <a href="{{ url_for('user', username=match.defender.username) }}">{{ match.defender.username }} </a>
-            <br>
-            <a href="{{ url_for('user', username=match.attacker.username) }}"> {{ match.attacker.username }}</a>
-            scored <b>{{ match.attacker_score }}</b>
+            <a href="{{ url_for('user', username=match.attacker_team.team_name) }}">
+                {{ match.attacker_team.team_name }}</a>
+        </td>
+        <td>
+            <a href="{{ url_for('user', username=match.defender_team.team_name) }}">{{ match.defender_team.team_name }}
+            </a>
+        </td>
+        <td>
+            {{ match.round }}
         </td>
     </tr>
 </table>

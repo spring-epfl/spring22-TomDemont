@@ -1,4 +1,5 @@
 from datetime import datetime
+from email.policy import default
 from typing import Any
 
 from flask_login import UserMixin
@@ -15,12 +16,24 @@ class User(UserMixin, db.Model):
     email = db.Column(db.String(96), index=True, unique=True)
     password_hash = db.Column(db.String(102))
     sciper = db.Column(db.Integer, unique=True)
+    is_admin = db.Column(db.Boolean, default=False)
 
     def team(self) -> Any:
         return (
             db.session.query(Team)
             .filter(or_(Team.member1_id == self.id, Team.member2_id == self.id))
             .first()
+        )
+
+    def has_team(self) -> bool:
+        return self.team() is not None
+
+    def has_match(self) -> bool:
+        team = self.team()
+        return (
+            self.has_team()
+            and team.defence_matchs.count() > 0
+            and team.defence_matchs.count() > 0
         )
 
     def set_password(self, password: str) -> None:
@@ -72,6 +85,10 @@ class Team(db.Model):
             db.session.query(User).filter(User.id == self.member2_id).first(),
         )
 
+    def has_admin(self) -> bool:
+        mem1, mem2 = self.members()
+        return mem1.is_admin or mem2.is_admin
+
     def attacks(self) -> Query:
         self_attacks = (
             db.session.query(Match.id)
@@ -95,6 +112,9 @@ class Utility:
 
     def __repr__(self):
         return "<Utility - volume: {}, time: {}>".format(self.data_volume, self.time)
+
+    def to_dict(self) -> dict:
+        return {"data_volume": self.data_volume, "time": self.time}
 
 
 class Defence(db.Model):
@@ -141,9 +161,12 @@ class AttackResult:
         self.false_positive = false_positive
 
     def __repr__(self) -> str:
-        return "<AttackResult - accuracy: {}, flase_positive: {}>".format(
+        return "<AttackResult - accuracy: {}, false_positive: {}>".format(
             self.accuracy, self.false_positive
         )
+
+    def to_dict(self) -> dict:
+        return {"accuracy": self.accuracy, "false_positive": self.false_positive}
 
 
 class Attack(db.Model):
