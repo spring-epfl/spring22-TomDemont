@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block app_content %}
+<h1>Profile of team {{ team.team_name }}</h1>
+<h4>Members: {% if member1 %} <a href="{{ url_for('user', username=member1.username) }}"> {{ member1.username }}</a>
+    {% else %} <a href="{{ url_for('join_team', team_name=team.team_name) }}"> [Join {{ team.team_name }}]</a>
+    {% endif %} and {% if member2 %} <a href="{{ url_for('user', username=member2.username) }}">
+        {{ member2.username }}</a>
+    {% else %} <a href="{{ url_for('join_team', team_name=team.team_name) }}"> [Join {{ team.team_name }}]</a>
+    {% endif %}</h4>
+<hr>
+{% if matches %}
+<h2>Matches assigned to {{ team.team_name }}</h2>
+{% for match in matches %}
+{% include '_match.html' %}
+{% endfor %}
+<nav aria-label="...">
+    <ul class="pager">
+        <li class="previous{% if not match_prev_url %} disabled{% endif %}">
+            <a href="{{ match_prev_url or '#' }}">
+                <span aria-hidden="true">&larr;</span> Newer matches
+            </a>
+        </li>
+        <li class="next{% if not match_next_url %} disabled{% endif %}">
+            <a href="{{ match_next_url or '#' }}">
+                Older matches <span aria-hidden="true">&rarr;</span>
+            </a>
+        </li>
+    </ul>
+</nav>
+{% endif %}
+{% if defence %}
+<h2>{{ team.team_name }}'s defence</h2>
+{% include '_defence.html' %}
+{% endif %}
+{% if attacks %}
+<h2>{{ team.team_name }}'s attacks</h2>
+{% for attack in attacks %}
+{% include '_attack.html' %}
+{% endfor %}
+<nav aria-label="...">
+    <ul class="pager">
+        <li class="previous{% if not attck_prev_url %} disabled{% endif %}">
+            <a href="{{ attack_prev_url or '#' }}">
+                <span aria-hidden="true">&larr;</span> Newer attacks
+            </a>
+        </li>
+        <li class="next{% if not attck_next_url %} disabled{% endif %}">
+            <a href="{{ attack_next_url or '#' }}">
+                Older attacks <span aria-hidden="true">&rarr;</span>
+            </a>
+        </li>
+    </ul>
+</nav>
+{% endif %}
+{% endblock %}

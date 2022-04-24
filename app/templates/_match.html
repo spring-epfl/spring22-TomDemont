@@ -2,19 +2,31 @@
     <tr>
         <th>Attacker Team</th>
         <th>Defender Team</th>
-        <th>Rounds</th>
+        <th>Round</th>
+        <th>Match State</th>
+        {% if match.attack_url %} <th>Attack Link</th> {% endif %}
     </tr>
     <tr>
         <td>
-            <a href="{{ url_for('user', username=match.attacker_team.team_name) }}">
+            <a href="{{ url_for('team', team_name=match.attacker_team.team_name) }}">
                 {{ match.attacker_team.team_name }}</a>
         </td>
         <td>
-            <a href="{{ url_for('user', username=match.defender_team.team_name) }}">{{ match.defender_team.team_name }}
+            <a href="{{ url_for('team', team_name=match.defender_team.team_name) }}">{{ match.defender_team.team_name }}
             </a>
         </td>
         <td>
             {{ match.round }}
         </td>
+        <td>
+            {% if match.match_done %} ✅ {% else %} ❌ {% endif %}
+        </td>
+        {% if match.attack_url %}
+        <td>
+            <a href="{{ match.attack_url }}">Go Attack
+            </a>
+
+        </td>
+        {% endif %}
     </tr>
 </table>

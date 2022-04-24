@@ -1,8 +1,10 @@
 from datetime import datetime
 from email.policy import default
 from typing import Any
+from flask import url_for
 
 from flask_login import UserMixin
+from flask_sqlalchemy import Pagination
 from sqlalchemy import func, or_
 from sqlalchemy.orm import Query
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -32,8 +34,8 @@ class User(UserMixin, db.Model):
         team = self.team()
         return (
             self.has_team()
-            and team.defence_matchs.count() > 0
-            and team.defence_matchs.count() > 0
+            and team.defence_matches.count() > 0
+            and team.defence_matches.count() > 0
         )
 
     def set_password(self, password: str) -> None:
@@ -65,14 +67,14 @@ class Team(db.Model):
         lazy="dynamic",
     )
 
-    defence_matchs = db.relationship(
+    defence_matches = db.relationship(
         "Match",
         backref="defender_team",
         foreign_keys="Match.defender_team_id",
         lazy="dynamic",
     )
 
-    attack_matchs = db.relationship(
+    attack_matches = db.relationship(
         "Match",
         backref="attacker_team",
         foreign_keys="Match.attacker_team_id",
@@ -87,7 +89,12 @@ class Team(db.Model):
 
     def has_admin(self) -> bool:
         mem1, mem2 = self.members()
-        return mem1.is_admin or mem2.is_admin
+        return (mem1 is not None and mem1.is_admin) or (
+            mem2 is not None and mem2.is_admin
+        )
+
+    def is_full(self) -> bool:
+        return self.member1_id is not None and self.member2_id is not None
 
     def attacks(self) -> Query:
         self_attacks = (
@@ -148,6 +155,38 @@ class Match(db.Model):
         foreign_keys="Attack.match_id",
         lazy="dynamic",
     )
+
+    def match_done(self) -> bool:
+        return db.session.query(Attack).filter(Attack.match_id == self.id).count() > 0
+
+    @staticmethod
+    def paginate_and_itemize_match_query(
+        matches: Query, page: int, matches_per_page: int, current_user_team: Team
+    ) -> tuple[Pagination, list[dict]]:
+        matches_sub = matches.subquery()
+        attacks_done = (
+            db.session.query(matches_sub.c.id)
+            .join(Attack, Attack.match_id == matches_sub.c.id)
+            .all()
+        )
+        attacks_done = [attack_done[0] for attack_done in attacks_done]
+        user_attack_matches_id = []
+        if current_user_team is not None:
+            user_attack_matches_id = db.session.query(
+                current_user_team.attack_matches.subquery().c.id
+            ).all()
+            user_attack_matches_id = [attack[0] for attack in user_attack_matches_id]
+
+        paginated = matches.paginate(page, matches_per_page)
+        matches_items = paginated.items
+        for m in matches_items:
+            m.match_done = m.id in attacks_done
+            m.attack_url = (
+                url_for("attack", match_id=m.id)
+                if m.id in user_attack_matches_id
+                else None
+            )
+        return paginated, matches_items
 
     def __repr__(self) -> str:
         return "<Match {} defends against {} (id: {})>".format(

@@ -19,7 +19,7 @@ class UserModelCase(unittest.TestCase):
         self.assertFalse(u.check_password("beep"))
         self.assertTrue(u.check_password("hoho"))
 
-    def test_matchs(self):
+    def test_matches(self):
         # Setup users
         u1 = User(username="john", email="john@example.com")
         u2 = User(username="susan", email="susan@example.com")
@@ -54,8 +54,8 @@ class UserModelCase(unittest.TestCase):
         db.session.add_all([m1, m2])
         db.session.commit()
 
-        self.assertEqual(t1.defence_matchs.all(), [m1])
-        self.assertEqual(t2.attack_matchs.all(), [m1])
+        self.assertEqual(t1.defence_matches.all(), [m1])
+        self.assertEqual(t2.attack_matches.all(), [m1])
 
         # Create attacks
         a1 = Attack(match_id=m1.id)

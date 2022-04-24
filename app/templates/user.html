@@ -1,23 +1,8 @@
 {% extends "base.html" %}
 
 {% block app_content %}
-<h1>All attacks from {{ user.username }}</h1>
+<h1>Profile of user {{ user.username }}</h1>
 <hr>
-{% for match in matches %}
-{% include '_match.html' %}
-{% endfor %}
-<nav aria-label="...">
-    <ul class="pager">
-        <li class="previous{% if not prev_url %} disabled{% endif %}">
-            <a href="{{ prev_url or '#' }}">
-                <span aria-hidden="true">&larr;</span> Newer matches
-            </a>
-        </li>
-        <li class="next{% if not next_url %} disabled{% endif %}">
-            <a href="{{ next_url or '#' }}">
-                Older matches <span aria-hidden="true">&rarr;</span>
-            </a>
-        </li>
-    </ul>
-</nav>
+<h4>Member of {% if team %} <a href="{{ url_for('team', team_name=team.team_name) }}">
+        {{ team.team_name }}</a>{% else %} no team :( {% endif %}</h4>
 {% endblock %}

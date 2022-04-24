@@ -36,7 +36,7 @@ Secret Race Strolling
       <ul class="nav navbar-nav">
         <li><a href="{{ url_for('index') }}">Home</a></li>
         {% if current_user.is_admin %}
-        <li><a href="{{ url_for('generate_matchs', round='usage') }}">Generate Matchs</a></li>
+        <li><a href="{{ url_for('generate_matches', round='usage') }}">Generate Matches</a></li>
         {% endif %}
       </ul>
       <ul class="nav navbar-nav navbar-right">

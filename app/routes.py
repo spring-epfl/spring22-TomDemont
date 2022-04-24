@@ -10,27 +10,33 @@ from werkzeug.urls import url_parse
 
 from app import app, db
 from app.forms import LoginForm, RegistrationForm
-from app.models import Match, Team, User
+from app.models import Match, Team, User, Defence, Attack
 
 from random import shuffle
 
 
 @app.route("/")
-@app.route("/index")
+@app.route("/index", methods=["GET"])
 @login_required
 def index():
     page = request.args.get("page", 1, type=int)
-    matches = (
-        db.session.query(Match)
-        .order_by(Match.round.desc())
-        .paginate(page, app.config["MATCHS_PER_PAGE"], False)
+    pagination, matches_items = Match.paginate_and_itemize_match_query(
+        db.session.query(Match).order_by(Match.round.desc()),
+        page,
+        app.config["MATCHES_PER_PAGE"],
+        current_user.team(),
     )
-    next_url = url_for("index", page=matches.next_num) if matches.has_next else None
-    prev_url = url_for("index", page=matches.prev_num) if matches.has_prev else None
+    next_url = (
+        url_for("index", page=pagination.next_num) if pagination.has_next else None
+    )
+    prev_url = (
+        url_for("index", page=pagination.prev_num) if pagination.has_prev else None
+    )
+
     return render_template(
         "index.html",
         title="Home",
-        matches=matches.items,
+        matches=matches_items,
         next_url=next_url,
         prev_url=prev_url,
     )
@@ -76,16 +82,16 @@ def logout():
     return redirect(url_for("index"))
 
 
-@app.route("/generate_matchs/<round>")
+@app.route("/generate_matches/<round>", methods=["GET"])
 @fresh_login_required
-def generate_matchs(round):
+def generate_matches(round):
     if not current_user.is_admin:
-        # Only the admins should be able to generate the matchs
+        # Only the admins should be able to generate the matches
         abort(403)
     else:
         if round == "usage" or int(round) == 0:
             # those special cases are treated as query for the "usages" of the function
-            return render_template("generate_matchs.html")
+            return render_template("generate_matches.html")
         round = int(round)
         if round < 0:
             flash("Cannot have a negative round number")
@@ -98,17 +104,17 @@ def generate_matchs(round):
             and db.session.query(Match.round).filter(Match.round == round - 1).count()
             == 0
         ):
-            flash("You have not generated the matchs for round {}".format(round - 1))
+            flash("You have not generated the matches for round {}".format(round - 1))
             abort(400)
         # we only keep teams of participants non-admin
         all_teams = list(filter(lambda x: not x.has_admin(), Team.query.all()))
         nb_teams = len(all_teams)
-        # we make sure not to have more than nb_teams-1 matchs per team to avoid self-matching
-        matchs_per_team = min([app.config["MATCHS_PER_TEAM"], nb_teams - 1])
-        # we shuffle the whole teams list to have random matchs
-        shuffle(all_teams, k=nb_teams)
+        # we make sure not to have more than nb_teams-1 matches per team to avoid self-matching
+        matches_per_team = min([app.config["MATCHES_PER_TEAM"], nb_teams - 1])
+        # we shuffle the whole teams list to have random matches
+        shuffle(all_teams)
         for team_index in range(nb_teams):
-            for match_index in range(1, matchs_per_team + 1):
+            for match_index in range(1, matches_per_team + 1):
                 # we circle through the shuffled participants list
                 # every team is matched to adversaries in indexes after theirs
                 # it makes sure they have random adversaries that are not themselves
@@ -124,31 +130,112 @@ def generate_matchs(round):
         return redirect(url_for("index"))
 
 
-@app.route("/user/<username>")
+@app.route("/user/<username>", methods=["GET"])
 @login_required
 def user(username):
     user = User.query.filter_by(username=username).first_or_404()
-    page = request.args.get("page", 1, type=int)
-    if True or not user.has_team() or not user.has_match():
-        return render_template(
-            "user.html",
-            user=user,
+    team = user.team()
+    return render_template("user.html", user=user, team=team)
+
+
+@app.route("/join_team/<team_name>", methods=["GET"])
+@fresh_login_required
+def join_team(team_name):
+    if current_user.has_team():
+        flash("You already have a team")
+        abort(400)
+    team = Team.query.filter_by(team_name=team_name).first_or_404()
+    if team.is_full():
+        flash("This team is already full")
+        abort(400)
+    if team.has_admin() and not current_user.is_admin():
+        abort(403)
+    if team.member1_id is None:
+        team.member1_id = current_user.id
+    else:
+        team.member2_id = current_user.id
+    db.session.commit()
+    flash("Congrats, you joined {}".format(team.team_name))
+    return redirect(url_for("team", team_name=team.team_name))
+
+
+@app.route("/attack/<match_id>", methods=["GET"])
+@login_required
+def attack(match_id):
+    abort(404)
+
+
+@app.route("/team/<team_name>", methods=["GET"])
+@login_required
+def team(team_name):
+    team = Team.query.filter_by(team_name=team_name).first_or_404()
+    member1, member2 = team.members()
+    page_match = request.args.get("page_match", 1, type=int)
+    page_attack = request.args.get("page_attack", 1, type=int)
+    pagination, matches_items = Match.paginate_and_itemize_match_query(
+        team.attack_matches.order_by(Match.round.desc()),
+        page_match,
+        app.config["MATCHES_PER_PAGE"],
+        current_user.team(),
+    )
+    match_next_url = (
+        url_for(
+            "team",
+            team_name=team.team_name,
+            page_match=pagination.next_num,
+            page_attack=page_attack,
         )
-    matches = user.team().attacks().paginate(page, app.config["MATCHS_PER_PAGE"], False)
-    next_url = (
-        url_for("user", username=current_user.username, page=matches.next_num)
-        if matches.has_next
+        if pagination.has_next
         else None
     )
-    prev_url = (
-        url_for("user", username=current_user.username, page=matches.prev_num)
-        if matches.has_prev
+    match_prev_url = (
+        url_for(
+            "team",
+            team_name=team.team_name,
+            page_match=pagination.prev_num,
+            page_attack=page_attack,
+        )
+        if pagination.has_prev
         else None
     )
+
+    defence = team.defences.order_by(Defence.timestamp.desc()).first()
+
+    attacks = team.attacks().paginate(
+        page_attack, app.config["MATCHES_PER_PAGE"], False
+    )
+    attack_next_url = (
+        url_for(
+            "team",
+            team_name=team.team_name,
+            page_match=page_match,
+            page_attack=attacks.next_num,
+        )
+        if attacks.has_next
+        else None
+    )
+    attack_prev_url = (
+        url_for(
+            "team",
+            team_name=team.team_name,
+            page_match=page_match,
+            page_attack=attacks.prev_num,
+        )
+        if attacks.has_prev
+        else None
+    )
+    attacks_items = attacks.items
+
     return render_template(
-        "user.html",
-        user=user,
-        matches=matches.items,
-        next_url=next_url,
-        prev_url=prev_url,
+        "team.html",
+        team=team,
+        member1=member1,
+        member2=member2,
+        matches=matches_items,
+        attacks=attacks_items,
+        defence=defence,
+        match_next_url=match_next_url,
+        match_prev_url=match_prev_url,
+        attack_next_url=attack_next_url,
+        attack_prev_url=attack_prev_url,
     )
