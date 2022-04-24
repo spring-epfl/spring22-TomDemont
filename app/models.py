@@ -157,21 +157,33 @@ class Match(db.Model):
     )
 
     def match_done(self) -> bool:
+        """Returns whether the attacker already made an attack or not for this match"""
         return db.session.query(Attack).filter(Attack.match_id == self.id).count() > 0
 
     @staticmethod
     def paginate_and_itemize_match_query(
         matches: Query, page: int, matches_per_page: int, current_user_team: Team
     ) -> tuple[Pagination, list[dict]]:
+        """Produces a pagination and matches items to prepare input for a _match.html template
+        Args:
+            - matches: a query object on the Match table (holds the matches that will be displayed)
+            - page: the page index for the pagination object
+            - matches_per_page: the number matches to display in the pagination
+            - current_user_team: the user we want to make the display adapted for
+        Returns:
+            Pagination object and the list of itemized Match objects for the displaying on _match.html template"""
         matches_sub = matches.subquery()
+        # we keep all the indexes of the matches that were already attacked at least once
         attacks_done = (
             db.session.query(matches_sub.c.id)
             .join(Attack, Attack.match_id == matches_sub.c.id)
             .all()
         )
+        # we flatten the returned object 
         attacks_done = [attack_done[0] for attack_done in attacks_done]
         user_attack_matches_id = []
         if current_user_team is not None:
+            # we keep all the match indexes of the matches the current user is the attacker of
             user_attack_matches_id = db.session.query(
                 current_user_team.attack_matches.subquery().c.id
             ).all()
@@ -180,6 +192,7 @@ class Match(db.Model):
         paginated = matches.paginate(page, matches_per_page)
         matches_items = paginated.items
         for m in matches_items:
+            # takes the paginated items and appends other useful data for displaying
             m.match_done = m.id in attacks_done
             m.attack_url = (
                 url_for("attack", match_id=m.id)

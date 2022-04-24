@@ -162,6 +162,7 @@ def join_team(team_name):
 @app.route("/attack/<match_id>", methods=["GET"])
 @login_required
 def attack(match_id):
+    # TODO
     abort(404)
 
 
@@ -183,7 +184,7 @@ def team(team_name):
             "team",
             team_name=team.team_name,
             page_match=pagination.next_num,
-            page_attack=page_attack,
+            page_attack=page_attack, # we must not forget to propagate the attack page
         )
         if pagination.has_next
         else None
@@ -193,7 +194,7 @@ def team(team_name):
             "team",
             team_name=team.team_name,
             page_match=pagination.prev_num,
-            page_attack=page_attack,
+            page_attack=page_attack, # we must not forget to propagate the attack page
         )
         if pagination.has_prev
         else None
@@ -208,7 +209,7 @@ def team(team_name):
         url_for(
             "team",
             team_name=team.team_name,
-            page_match=page_match,
+            page_match=page_match, # we must not forget to propagate the match page
             page_attack=attacks.next_num,
         )
         if attacks.has_next
@@ -218,7 +219,7 @@ def team(team_name):
         url_for(
             "team",
             team_name=team.team_name,
-            page_match=page_match,
+            page_match=page_match, # we must not forget to propagate the match page
             page_attack=attacks.prev_num,
         )
         if attacks.has_prev
