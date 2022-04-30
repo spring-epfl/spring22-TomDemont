@@ -179,7 +179,7 @@ class Match(db.Model):
             .join(Attack, Attack.match_id == matches_sub.c.id)
             .all()
         )
-        # we flatten the returned object 
+        # we flatten the returned object
         attacks_done = [attack_done[0] for attack_done in attacks_done]
         user_attack_matches_id = []
         if current_user_team is not None:
@@ -194,11 +194,6 @@ class Match(db.Model):
         for m in matches_items:
             # takes the paginated items and appends other useful data for displaying
             m.match_done = m.id in attacks_done
-            m.attack_url = (
-                url_for("attack", match_id=m.id)
-                if m.id in user_attack_matches_id
-                else None
-            )
         return paginated, matches_items
 
     def __repr__(self) -> str:

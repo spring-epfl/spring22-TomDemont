@@ -9,10 +9,14 @@ from flask_login import (
 from werkzeug.urls import url_parse
 
 from app import app, db
-from app.forms import LoginForm, RegistrationForm
+from app.forms import LoginForm, RegistrationForm, DefenceUpload
 from app.models import Match, Team, User, Defence, Attack
 
 from random import shuffle
+
+import os
+from datetime import datetime
+from app.tasks import verify_uploaded_defence
 
 
 @app.route("/")
@@ -82,17 +86,17 @@ def logout():
     return redirect(url_for("index"))
 
 
-@app.route("/generate_matches/<round>", methods=["GET"])
+@app.route("/generate_matches/", methods=["GET"])
 @fresh_login_required
-def generate_matches(round):
+def generate_matches():
     if not current_user.is_admin:
         # Only the admins should be able to generate the matches
         abort(403)
     else:
-        if round == "usage" or int(round) == 0:
+        round = request.args.get("round", 0, type=int)
+        if round == 0:
             # those special cases are treated as query for the "usages" of the function
             return render_template("generate_matches.html")
-        round = int(round)
         if round < 0:
             flash("Cannot have a negative round number")
             abort(400)
@@ -127,6 +131,7 @@ def generate_matches(round):
                 )
                 db.session.add(m)
         db.session.commit()
+        app.config["ROUND"] = round
         return redirect(url_for("index"))
 
 
@@ -138,12 +143,13 @@ def user(username):
     return render_template("user.html", user=user, team=team)
 
 
-@app.route("/join_team/<team_name>", methods=["GET"])
+@app.route("/join_team/", methods=["GET"])
 @fresh_login_required
-def join_team(team_name):
+def join_team():
     if current_user.has_team():
         flash("You already have a team")
         abort(400)
+    team_name = request.args.get("team_name", None, type=str)
     team = Team.query.filter_by(team_name=team_name).first_or_404()
     if team.is_full():
         flash("This team is already full")
@@ -159,11 +165,49 @@ def join_team(team_name):
     return redirect(url_for("team", team_name=team.team_name))
 
 
-@app.route("/attack/<match_id>", methods=["GET"])
+@app.route("/attack/", methods=["GET"])
 @login_required
-def attack(match_id):
-    # TODO
+def attack():
+    if not app.config["ATTACK_PHASE"]:
+        flash("You cannot attack others now")
+        abort(503)
+    def_matches_in_round = (
+        current_user.team()
+        .defence_matches.filter(Match.round == app.config["ROUND"])
+        .all()
+    )
+    if len(def_matches_in_round) < 1:
+        flash("You have no match yet for this round")
+        abort(404)
+    defence_id_to_attack = map(
+        lambda m: m.defender_team.defences.filter(Defence.round == app.config["ROUND"])
+        .order_by(Defence.timestamp.desc())
+        .first(),
+        def_matches_in_round,
+    )
     abort(404)
+
+
+@app.route("/defence/", methods=["GET", "POST"])
+@login_required
+def defence():
+    if not app.config["DEFENCE_PHASE"]:
+        flash("You cannot upload your defence trace now")
+        abort(503)
+    form = DefenceUpload()
+    if form.validate_on_submit():
+        uploaded_file = request.files["file"]
+        filename = "team_{:d}_{:s}.zip".format(
+            current_user.team().id, datetime.utcnow().strftime("%m_%d_%Y_%H:%M:%S")
+        )
+        uploaded_file.save(
+            os.path.join(app.config["TEMPORARY_UPLOAD_FOLDER"], filename)
+        )
+        verify_uploaded_defence.apply_async(args=[filename])
+        flash("Defence received! Evaluation in process")
+        return redirect(url_for("defence"))
+
+    return render_template("upload_def.html", form=form)
 
 
 @app.route("/team/<team_name>", methods=["GET"])
@@ -176,7 +220,7 @@ def team(team_name):
     pagination, matches_items = Match.paginate_and_itemize_match_query(
         team.attack_matches.order_by(Match.round.desc()),
         page_match,
-        app.config["MATCHES_PER_PAGE"],
+        app.config["MATCHES_PER_TEAM"],
         current_user.team(),
     )
     match_next_url = (
@@ -184,7 +228,7 @@ def team(team_name):
             "team",
             team_name=team.team_name,
             page_match=pagination.next_num,
-            page_attack=page_attack, # we must not forget to propagate the attack page
+            page_attack=page_attack,  # we must not forget to propagate the attack page
         )
         if pagination.has_next
         else None
@@ -194,7 +238,7 @@ def team(team_name):
             "team",
             team_name=team.team_name,
             page_match=pagination.prev_num,
-            page_attack=page_attack, # we must not forget to propagate the attack page
+            page_attack=page_attack,  # we must not forget to propagate the attack page
         )
         if pagination.has_prev
         else None
@@ -203,13 +247,13 @@ def team(team_name):
     defence = team.defences.order_by(Defence.timestamp.desc()).first()
 
     attacks = team.attacks().paginate(
-        page_attack, app.config["MATCHES_PER_PAGE"], False
+        page_attack, app.config["MATCHES_PER_TEAM"], False
     )
     attack_next_url = (
         url_for(
             "team",
             team_name=team.team_name,
-            page_match=page_match, # we must not forget to propagate the match page
+            page_match=page_match,  # we must not forget to propagate the match page
             page_attack=attacks.next_num,
         )
         if attacks.has_next
@@ -219,7 +263,7 @@ def team(team_name):
         url_for(
             "team",
             team_name=team.team_name,
-            page_match=page_match, # we must not forget to propagate the match page
+            page_match=page_match,  # we must not forget to propagate the match page
             page_attack=attacks.prev_num,
         )
         if attacks.has_prev
@@ -239,4 +283,8 @@ def team(team_name):
         match_prev_url=match_prev_url,
         attack_next_url=attack_next_url,
         attack_prev_url=attack_prev_url,
+        upload_defence=url_for("defence") if app.config["DEFENCE_PHASE"] else None,
+        download_attacks=url_for("attack", round=app.config["ROUND"])
+        if app.config["ATTACK_PHASE"]
+        else None,
     )

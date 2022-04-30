@@ -9,6 +9,13 @@
     {% else %} <a href="{{ url_for('join_team', team_name=team.team_name) }}"> [Join {{ team.team_name }}]</a>
     {% endif %}</h4>
 <hr>
+{% if upload_defence %}
+<p><a href="{{ url_for('defence') }}">Upload your defence</a> for round {{ config["ROUND"] }}</p>
+{% endif %}
+{% if download_attacks %}
+<p><a href="{{ url_for('defence') }}">Download the traces</a> you should attack for round
+    {{ config["ROUND"] }}</p>
+{% endif %}
 {% if matches %}
 <h2>Matches assigned to {{ team.team_name }}</h2>
 {% for match in matches %}

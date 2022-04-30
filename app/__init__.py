@@ -1,13 +1,14 @@
 import logging
-from logging.handlers import SMTPHandler
-from logging.handlers import RotatingFileHandler
 import os
-from flask import Flask
+from logging.handlers import RotatingFileHandler, SMTPHandler
+
+from celery import Celery
 from config import Config
-from flask_sqlalchemy import SQLAlchemy
-from flask_migrate import Migrate
-from flask_login import LoginManager
+from flask import Flask
 from flask_bootstrap import Bootstrap
+from flask_login import LoginManager
+from flask_migrate import Migrate
+from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -16,6 +17,8 @@ migrate = Migrate(app, db)
 login = LoginManager(app)
 login.login_view = "login"  # function name for login
 bootstrap = Bootstrap(app)
+celery = Celery(app.name, broker=app.config["CELERY_BROKER_URL"])
+celery.conf.update(app.config)
 
 if not app.debug:
     if app.config["MAIL_SERVER"]:
@@ -50,4 +53,4 @@ if not app.debug:
     app.logger.setLevel(logging.INFO)
     app.logger.info("Secret Race Strolling startup")
 
-from app import routes, models, errors
+from app import errors, models, routes, tasks

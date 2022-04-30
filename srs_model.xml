@@ -103,8 +103,8 @@
 <datatype>INTEGER</datatype>
 <default>NULL</default></row>
 <row name="utility_score" null="1" autoincrement="0">
-<datatype>FLOAT</datatype>
-<default>0.0</default></row>
+<datatype>BLOB</datatype>
+</row>
 <row name="timestamp" null="1" autoincrement="0">
 <datatype>TIMESTAMP</datatype>
 <default>NULL</default></row>

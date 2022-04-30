@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+
+{% block app_content %}
+<h1>Your uploaded file should not exceed {{ config["MAX_CONTENT_LENGTH"]/(1024*1024) }} MB</h1>
+<p><a href="{{ url_for('index') }}">Back</a></p>
+{% endblock %}

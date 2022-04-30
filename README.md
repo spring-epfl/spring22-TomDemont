@@ -27,5 +27,15 @@ Then run the server with:
 flask run
 ```
 
+Run Redis message broker with
+```zsh
+./run-redis.sh
+```
+
+Run Celery worker with
+```zsh
+celery -A app.celery worker --loglevel=info
+```
+
 ## Credits
 The Flask app is created following the useful and very detailed guides from [Miguel Grinberg](https://blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-i-hello-world).

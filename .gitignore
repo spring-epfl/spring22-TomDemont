@@ -130,3 +130,6 @@ dmypy.json
 
 # MacOS files
 .DS_Store
+
+# Redis local build is machine dependent
+redis-stable

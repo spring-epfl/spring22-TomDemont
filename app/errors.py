@@ -20,3 +20,15 @@ def forbidden_error(error):
 @app.errorhandler(400)
 def bad_request_error(error):
     return render_template("400.html"), 400
+
+@app.errorhandler(503)
+def service_unavailable_error(error):
+    return render_template("503.html"), 503
+
+@app.errorhandler(405)
+def method_not_allowed(error):
+    return render_template("405.html"), 405
+
+@app.errorhandler(413)
+def too_large(errot):
+    return render_template("413.html"), 413

@@ -1,6 +1,19 @@
+import os
+from zipfile import ZipFile
+
+import pandas as pd
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, BooleanField, SubmitField, IntegerField
-from wtforms.validators import ValidationError, DataRequired, Email, EqualTo, NumberRange
+from flask_wtf.file import FileAllowed, FileField, FileRequired
+from wtforms import BooleanField, IntegerField, PasswordField, StringField, SubmitField
+from wtforms.validators import (
+    DataRequired,
+    Email,
+    EqualTo,
+    NumberRange,
+    ValidationError,
+)
+
+from app import app
 from app.models import User
 
 
@@ -18,7 +31,13 @@ class RegistrationForm(FlaskForm):
     password2 = PasswordField(
         "Repeat Password", validators=[DataRequired(), EqualTo("password")]
     )
-    sciper = IntegerField("Sciper", validators=[DataRequired(), NumberRange(100000, 999999, "Please enter a valid Sciper")])
+    sciper = IntegerField(
+        "Sciper",
+        validators=[
+            DataRequired(),
+            NumberRange(100000, 999999, "Please enter a valid Sciper"),
+        ],
+    )
     submit = SubmitField("Register")
 
     def validate_username(self, username):
@@ -26,10 +45,43 @@ class RegistrationForm(FlaskForm):
         if user is not None:
             raise ValidationError("Please use a different username.")
         if not username.data.isascii():
-            raise ValidationError("Please use a username containing only ASCII characters.")
-    
+            raise ValidationError(
+                "Please use a username containing only ASCII characters."
+            )
+
     def validate_email(self, email):
         user = User.query.filter_by(email=email.data).first()
         if user is not None:
             raise ValidationError("Please use a different email address.")
 
+
+class DefenceUpload(FlaskForm):
+    file = FileField(
+        "CSV Defence Trace",
+        validators=[
+            FileRequired(),
+            FileAllowed(
+                app.config["UPLOAD_EXTENSIONS"],
+                message="Please, see upload file format instructions",
+            ),
+        ],
+    )
+    submit = SubmitField("Register")
+
+    def validate_file(self, file):
+        filename = file.data.filename
+        if filename == "":
+            raise ValidationError("No file uploaded")
+        with ZipFile(file.data.stream, "r") as zip:
+            name_list = zip.namelist()
+            if len(name_list) != 1:
+                print(name_list)
+                raise ValidationError(
+                    "Your upload does not contain the correct files. Check your hidden files"
+                )
+            file_ext = os.path.splitext(name_list[0])[1]
+            if file_ext not in app.config["DATASET_EXTENSIONS"]:
+                raise ValidationError(
+                    "Your upload should contain a dataset in the right file format"
+                )
+        file.data.stream.seek(0)

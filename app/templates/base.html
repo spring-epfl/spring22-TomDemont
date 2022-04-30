@@ -38,6 +38,7 @@ Secret Race Strolling
         {% if current_user.is_admin %}
         <li><a href="{{ url_for('generate_matches', round='usage') }}">Generate Matches</a></li>
         {% endif %}
+        <li><a>Current Round: {{ config["ROUND"] }}</a></li>
       </ul>
       <ul class="nav navbar-nav navbar-right">
         {% if current_user.is_anonymous %}

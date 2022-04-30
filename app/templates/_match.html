@@ -4,7 +4,6 @@
         <th>Defender Team</th>
         <th>Round</th>
         <th>Match State</th>
-        {% if match.attack_url %} <th>Attack Link</th> {% endif %}
     </tr>
     <tr>
         <td>
@@ -21,12 +20,5 @@
         <td>
             {% if match.match_done %} ✅ {% else %} ❌ {% endif %}
         </td>
-        {% if match.attack_url %}
-        <td>
-            <a href="{{ match.attack_url }}">Go Attack
-            </a>
-
-        </td>
-        {% endif %}
     </tr>
 </table>
