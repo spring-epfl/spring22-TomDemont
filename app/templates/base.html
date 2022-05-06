@@ -36,9 +36,15 @@ Secret Race Strolling
       <ul class="nav navbar-nav">
         <li><a href="{{ url_for('index') }}">Home</a></li>
         {% if current_user.is_admin %}
-        <li><a href="{{ url_for('generate_matches', round='usage') }}">Generate Matches</a></li>
+        <li><a href="{{ url_for('generate_matches') }}">Generate Matches</a></li>
         {% endif %}
-        <li><a>Current Round: {{ config["ROUND"] }}</a></li>
+        <li><a>Round: {{ config["ROUND"] }}</a></li>
+        {% if config["DEFENCE_PHASE"] %}
+        <li><a style="color:darkblue">Defence</a></li>
+        {% endif %}
+        {% if config["ATTACK_PHASE"] %}
+        <li><a style="color:darkred">Attack</a></li>
+        {% endif %}
       </ul>
       <ul class="nav navbar-nav navbar-right">
         {% if current_user.is_anonymous %}
@@ -65,7 +71,30 @@ Secret Race Strolling
   {% endfor %}
   {% endif %}
   {% endwith %}
-
+</div>
+<div class="container">
+  <ul class="nav nav-pills nav-justified">
+    {% if config["DEFENCE_PHASE"] %}
+    <li class="nav-item">
+      <a
+        class="nav-link"
+        style="background:rgba(0, 0, 139, 0.3);color:black"
+        href="{{ url_for('defence') }}"
+      >Upload Defence</a>
+    </li>
+    {% endif %}
+    {% if config["ATTACK_PHASE"] %}
+    <li class="nav-item">
+      <a
+        class="nav-link"
+        style="background:rgba(139, 0, 0, 0.3);color:black"
+        href="{{ url_for('attack') }}"
+      >Attack</a>
+    </li>
+    {% endif %}
+  </ul>
+</div>
+<div class="container">
   {# application content needs to be provided in the app_content block #}
   {% block app_content %}{% endblock %}
 </div>

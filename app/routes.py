@@ -1,3 +1,7 @@
+import os
+from datetime import datetime
+from random import shuffle
+
 from flask import abort, flash, redirect, render_template, request, url_for
 from flask_login import (
     current_user,
@@ -9,14 +13,9 @@ from flask_login import (
 from werkzeug.urls import url_parse
 
 from app import app, db
-from app.forms import LoginForm, RegistrationForm, DefenceUpload
-from app.models import Match, Team, User, Defence, Attack
-
-from random import shuffle
-
-import os
-from datetime import datetime
-from app.tasks import verify_uploaded_defence
+from app.forms import DefenceUpload, LoginForm, RegistrationForm
+from app.models import Attack, Defence, Match, Team, User
+from app.tasks import send_mail, treat_uploaded_defence
 
 
 @app.route("/")
@@ -194,18 +193,22 @@ def defence():
     if not app.config["DEFENCE_PHASE"]:
         flash("You cannot upload your defence trace now")
         abort(503)
+    if not current_user.has_team():
+        flash("You cannot upload a defence while you have no team")
+        abort(503)
     form = DefenceUpload()
     if form.validate_on_submit():
         uploaded_file = request.files["file"]
         filename = "team_{:d}_{:s}.zip".format(
             current_user.team().id, datetime.utcnow().strftime("%m_%d_%Y_%H:%M:%S")
         )
-        uploaded_file.save(
-            os.path.join(app.config["TEMPORARY_UPLOAD_FOLDER"], filename)
+        save_path = os.path.join(app.config["TEMPORARY_UPLOAD_FOLDER"], filename)
+        uploaded_file.save(save_path)
+        treat_uploaded_defence.delay(filename, current_user.id)
+        flash(
+            "Defence received! Evaluation in process, you will receive results by email shortly"
         )
-        verify_uploaded_defence.apply_async(args=[filename])
-        flash("Defence received! Evaluation in process")
-        return redirect(url_for("defence"))
+        return redirect(url_for("team", team_name=current_user.team().team_name))
 
     return render_template("upload_def.html", form=form)
 
@@ -283,8 +286,4 @@ def team(team_name):
         match_prev_url=match_prev_url,
         attack_next_url=attack_next_url,
         attack_prev_url=attack_prev_url,
-        upload_defence=url_for("defence") if app.config["DEFENCE_PHASE"] else None,
-        download_attacks=url_for("attack", round=app.config["ROUND"])
-        if app.config["ATTACK_PHASE"]
-        else None,
     )

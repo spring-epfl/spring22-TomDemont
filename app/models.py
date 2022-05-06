@@ -1,8 +1,7 @@
 from datetime import datetime
-from email.policy import default
-from typing import Any
-from flask import url_for
+from typing import Any, Optional
 
+from flask import url_for
 from flask_login import UserMixin
 from flask_sqlalchemy import Pagination
 from sqlalchemy import func, or_
@@ -20,7 +19,7 @@ class User(UserMixin, db.Model):
     sciper = db.Column(db.Integer, unique=True)
     is_admin = db.Column(db.Boolean, default=False)
 
-    def team(self) -> Any:
+    def team(self) -> Optional[Any]:
         return (
             db.session.query(Team)
             .filter(or_(Team.member1_id == self.id, Team.member2_id == self.id))
@@ -113,15 +112,45 @@ class Team(db.Model):
 class Utility:
     """Stores the utility metrics kept to evaluate a defence"""
 
-    def __init__(self, data_volume: int, time: float) -> None:
-        self.data_volume = data_volume
-        self.time = time
+    def __init__(
+        self,
+        max_in_volume: int,
+        mean_in_volume: float,
+        med_in_volume: float,
+        max_out_volume: int,
+        mean_out_volume: float,
+        med_out_volume: float,
+        max_time: float,
+        mean_time: float,
+        med_time: float,
+    ) -> None:
+        self.max_in_volume = max_in_volume
+        self.mean_in_volume = mean_in_volume
+        self.med_in_volume = med_in_volume
+        self.max_out_volume = max_out_volume
+        self.mean_out_volume = mean_out_volume
+        self.med_out_volume = med_out_volume
+        self.max_time = max_time
+        self.mean_time = mean_time
+        self.med_time = med_time
 
     def __repr__(self):
-        return "<Utility - volume: {}, time: {}>".format(self.data_volume, self.time)
+        return "<Utility: \nmed_in_volume: {:.1f} bytes\nmed_out_volume: {:.1f} bytes\nmed_time: {:.3f} seconds>".format(
+            abs(self.med_in_volume), self.med_out_volume, self.med_time
+        )
 
     def to_dict(self) -> dict:
-        return {"data_volume": self.data_volume, "time": self.time}
+        return {
+            "max_in_volume": self.max_in_volume,
+            "mean_in_volume": self.mean_in_volume,
+            "med_in_volume": self.med_in_volume,
+            "max_out_volume": self.max_out_volume,
+            "mean_out_volume": self.mean_out_volume,
+            "med_out_volume": self.med_out_volume,
+            "max_time": self.max_time,
+            "mean_time": self.mean_time,
+            "med_time": self.med_time,
+        }
 
 
 class Defence(db.Model):
@@ -181,13 +210,6 @@ class Match(db.Model):
         )
         # we flatten the returned object
         attacks_done = [attack_done[0] for attack_done in attacks_done]
-        user_attack_matches_id = []
-        if current_user_team is not None:
-            # we keep all the match indexes of the matches the current user is the attacker of
-            user_attack_matches_id = db.session.query(
-                current_user_team.attack_matches.subquery().c.id
-            ).all()
-            user_attack_matches_id = [attack[0] for attack in user_attack_matches_id]
 
         paginated = matches.paginate(page, matches_per_page)
         matches_items = paginated.items

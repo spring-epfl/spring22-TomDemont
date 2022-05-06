@@ -9,6 +9,7 @@ from flask_bootstrap import Bootstrap
 from flask_login import LoginManager
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
+from flask_mail import Mail
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -17,11 +18,12 @@ migrate = Migrate(app, db)
 login = LoginManager(app)
 login.login_view = "login"  # function name for login
 bootstrap = Bootstrap(app)
+mail = Mail(app)
 celery = Celery(app.name, broker=app.config["CELERY_BROKER_URL"])
 celery.conf.update(app.config)
 
 if not app.debug:
-    if app.config["MAIL_SERVER"]:
+    if app.config["MAIL_SERVER"] and not app.config["MAIL_USE_SSL"]:
         auth = None
         if app.config["MAIL_USERNAME"] or app.config["MAIL_PASSWORD"]:
             auth = (app.config["MAIL_USERNAME"], app.config["MAIL_PASSWORD"])
