@@ -1,24 +1,32 @@
 import os
 from zipfile import ZipFile
 
-import pandas as pd
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileAllowed, FileField, FileRequired
-from wtforms import BooleanField, IntegerField, PasswordField, StringField, SubmitField
+from wtforms import (
+    BooleanField,
+    IntegerField,
+    PasswordField,
+    StringField,
+    SubmitField,
+    SelectField,
+    FormField,
+)
 from wtforms.validators import (
     DataRequired,
     Email,
     EqualTo,
     NumberRange,
     ValidationError,
+    Length,
 )
 
 from app import app
-from app.models import User
+from app.models import User, Team
 
 
 class LoginForm(FlaskForm):
-    username = StringField("Username", validators=[DataRequired()])
+    username = StringField("Username", validators=[DataRequired(), Length(max=64)])
     password = PasswordField("Password", validators=[DataRequired()])
     remember_me = BooleanField("Remember Me")
     submit = SubmitField("Sign In")
@@ -38,6 +46,13 @@ class RegistrationForm(FlaskForm):
             NumberRange(100000, 999999, "Please enter a valid Sciper"),
         ],
     )
+    team_select = SelectField(
+        "Team selection", validators=[DataRequired()], default="New team"
+    )
+    new_team_name = StringField(
+        "New team name",
+        render_kw={"placeholder": "Fill only if you want to create a new team"},
+    )
     submit = SubmitField("Register")
 
     def validate_username(self, username):
@@ -53,6 +68,32 @@ class RegistrationForm(FlaskForm):
         user = User.query.filter_by(email=email.data).first()
         if user is not None:
             raise ValidationError("Please use a different email address.")
+
+    def validate_team_select(self, team_select):
+        team = Team.query.filter_by(team_name=team_select.data).first()
+        if team_select.data != "New team" and team is not None and team.is_full():
+            raise ValidationError("The team you try to join is already full")
+
+    def validate_new_team_name(self, new_team_name):
+        if new_team_name == "New team":
+            raise ValidationError("You cannot give this name to your team")
+
+        if self.team_select.data != "New team" and new_team_name.data != "":
+            raise ValidationError("Fill only if you want to create a new team")
+
+        if (
+            (self.team_select.data == "New team" and new_team_name.data == "")
+            or not new_team_name.data.isascii()
+            or new_team_name.data.isspace()
+        ):
+            raise ValidationError(
+                "You need to provide a non-empty, ascii characters only team name"
+            )
+        team = Team.query.filter_by(team_name=new_team_name.data).first()
+        if team is not None:
+            raise ValidationError(
+                "The team you try to join is already exists, select it it the field"
+            )
 
 
 class DefenceUpload(FlaskForm):

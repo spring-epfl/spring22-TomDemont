@@ -21,14 +21,14 @@ class Config(object):
     MAIL_PASSWORD = os.environ.get("MAIL_PASSWORD")
     ADMINS = ["tom.demont@epfl.ch"]
     MAIL_DEFAULT_SENDER = os.environ.get("MAIL_DEFAULT_SENDER")
-    MATCHES_PER_PAGE = 40
     MATCHES_PER_TEAM = os.environ.get("MATCHES_PER_TEAM") or 3
+    MATCHES_PER_PAGE = os.environ.get("MATCHES_PER_TEAM") or 40 * MATCHES_PER_TEAM
     DEFENCE_PHASE = True
     ATTACK_PHASE = True
     ROUND = 1
     UPLOAD_EXTENSIONS = ["zip"]
     DATASET_EXTENSIONS = [".csv"]
-    MAX_CONTENT_LENGTH = 32 * 1024 * 1024
+    MAX_CONTENT_LENGTH = 32 * 1024 * 1024 # 32MB
     UPLOAD_FOLDER = "uploads"
     TEMPORARY_UPLOAD_FOLDER = "temp_uploads"
     DATASET_COLUMNS = ["cell_id", "rep", "direction_size", "timestamp"]

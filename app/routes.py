@@ -50,11 +50,23 @@ def register():
     if current_user.is_authenticated:
         return redirect(url_for("index"))
     form = RegistrationForm()
+    form.team_select.choices = ["New team"] + [
+        team.team_name for team in Team.query.all() if not team.is_full()
+    ]
     if form.validate_on_submit():
+        print("validated")
         user = User(username=form.username.data, email=form.email.data, is_admin=False)
         user.set_password(form.password.data)
         db.session.add(user)
         db.session.commit()
+        if form.team_select.data != "New team":
+            team = Team.query.filter_by(team_name=form.team_select.data).first()
+            team.member2_id = user.id
+            db.session.commit()
+        else:
+            team = Team(team_name=form.new_team_name.data, member1_id=user.id)
+            db.session.add(team)
+            db.session.commit()
         flash("Congratulations, you are now a registered user!")
         return redirect(url_for("login"))
     return render_template("register.html", title="Register", form=form)
