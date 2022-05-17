@@ -28,9 +28,16 @@ class Config(object):
     ROUND = 1
     UPLOAD_EXTENSIONS = ["zip"]
     DATASET_EXTENSIONS = [".csv"]
-    MAX_CONTENT_LENGTH = 32 * 1024 * 1024 # 32MB
+    MAX_CONTENT_LENGTH = 32 * 1024 * 1024  # 32MB
     UPLOAD_FOLDER = "uploads"
     TEMPORARY_UPLOAD_FOLDER = "temp_uploads"
     DATASET_COLUMNS = ["cell_id", "rep", "direction_size", "timestamp"]
+    ATTACK_COLUMNS = ["team_id", "capture_id"] + [
+        "prob_cell_id_{}".format(i) for i in range(1, 101)
+    ]
     CELERY_BROKER_URL = "redis://localhost:6379/0"
     CELERY_RESULT_BACKEND = "redis://localhost:6379/0"
+    TEST_FILENAME_FORMAT = "team_{}_test.csv.zip"
+    TRAIN_FILENAME_FORMAT = "team_{}_train.csv.zip"
+    VERIF_FILENAME_FORMAT = "team_{}_verif.csv.zip"
+    NB_TRACES_TO_CLASSIFY = os.environ.get("NB_TRACES_TO_CLASSIFY") or 300
