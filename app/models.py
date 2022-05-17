@@ -63,8 +63,66 @@ class Team(db.Model):
             self_attacks, self_attacks.c.id == Attack.match_id
         )
 
+    def teams_to_attack_in_round(self, round: int) -> Query:
+        attack_matches_sub = self.attack_matches.filter(Match.round == round).subquery()
+        return (
+            db.session.query(Team)
+            .join(attack_matches_sub, attack_matches_sub.c.defender_team_id == Team.id)
+            .distinct()
+        )
+
+    def team_id_to_attack_in_round(self, round: int) -> list[int]:
+        teams_to_attack_subq = self.teams_to_attack_in_round(round=round).subquery()
+        tuple_team_id_to_attack = db.session.query(teams_to_attack_subq.c.id).all()
+        return [t[0] for t in tuple_team_id_to_attack]
+
+    def defence_matches_in_round(self, round) -> Query:
+        return self.defence_matches.filter(Match.round == round)
+
     def __repr__(self) -> str:
         return "<Team {} (id: {})>".format(self.team_name, self.id)
+
+
+class User(UserMixin, db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(64), index=True, unique=True)
+    email = db.Column(db.String(96), index=True, unique=True)
+    password_hash = db.Column(db.String(102))
+    sciper = db.Column(db.Integer, unique=True)
+    is_admin = db.Column(db.Boolean, default=False)
+
+    def team(self) -> Optional[Team]:
+        return (
+            db.session.query(Team)
+            .filter(or_(Team.member1_id == self.id, Team.member2_id == self.id))
+            .first()
+        )
+
+    def has_team(self) -> bool:
+        return self.team() is not None
+
+    def has_match(self) -> bool:
+        team = self.team()
+        return (
+            self.has_team()
+            and team.defence_matches.count() > 0
+            and team.defence_matches.count() > 0
+        )
+
+    def set_password(self, password: str) -> None:
+        # basically hashes with random salt using PBKDF2, see https://werkzeug.palletsprojects.com/en/2.0.x/utils/#module-werkzeug.security
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password: str) -> bool:
+        return check_password_hash(self.password_hash, password)
+
+    def __repr__(self) -> str:
+        return "<User {} (id: {})>".format(self.username, self.id)
+
+
+@login.user_loader
+def load_user(id: int) -> User:
+    return User.query.get(int(id))
 
 
 class Utility:
