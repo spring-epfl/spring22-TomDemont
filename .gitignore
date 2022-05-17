@@ -133,3 +133,6 @@ dmypy.json
 
 # Redis local build is machine dependent
 redis-stable
+
+# Not push the heavy files
+*.zip
