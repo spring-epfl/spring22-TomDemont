@@ -22,9 +22,10 @@ from flask_login import (
 from werkzeug.urls import url_parse
 
 from app import app, db
-from app.forms import DefenceUpload, LoginForm, RegistrationForm
+from app.forms import AttackUpload, DefenceUpload, LoginForm, RegistrationForm
 from app.models import Attack, Defence, Match, Team, User
-from app.tasks import send_mail, treat_uploaded_defence
+from app.tasks import send_mail, treat_uploaded_defence, treat_uploaded_attack
+import tempfile
 
 
 @app.route("/")
@@ -191,21 +192,62 @@ def attack():
     if not app.config["ATTACK_PHASE"]:
         flash("You cannot attack others now")
         abort(503)
-    def_matches_in_round = (
-        current_user.team()
-        .defence_matches.filter(Match.round == app.config["ROUND"])
-        .all()
-    )
-    if len(def_matches_in_round) < 1:
-        flash("You have no match yet for this round")
-        abort(404)
-    defence_id_to_attack = map(
-        lambda m: m.defender_team.defences.filter(Defence.round == app.config["ROUND"])
-        .order_by(Defence.timestamp.desc())
-        .first(),
-        def_matches_in_round,
-    )
-    abort(404)
+    if not current_user.has_team():
+        flash("You cannot make attacks if you have no team")
+        abort(503)
+    download = request.args.get("download", False, type=bool)
+    if download:
+        nb_def_matches_in_round = (
+            current_user.team()
+            .defence_matches_in_round(round=app.config["ROUND"])
+            .count()
+        )
+        if nb_def_matches_in_round < 1:
+            flash("You have no match yet for this round")
+            abort(404)
+
+        team_id_to_attack = current_user.team().team_id_to_attack_in_round(
+            round=app.config["ROUND"]
+        )
+        files_to_send = [
+            app.config["TEST_FILENAME_FORMAT"].format(team_id)
+            for team_id in team_id_to_attack
+        ] + [
+            app.config["TRAIN_FILENAME_FORMAT"].format(team_id)
+            for team_id in team_id_to_attack
+        ]
+
+        _, temp_file = tempfile.mkstemp(".zip")
+        with ZipFile(temp_file, "w") as zip:
+            for file in files_to_send:
+                try:
+                    zip.write(
+                        os.path.join(app.root_path, app.config["UPLOAD_FOLDER"], file),
+                        arcname=os.path.split(file)[1],
+                    )
+                except FileNotFoundError:
+                    print("File not found: {:s}".format(file))
+        file_to_send_name = "user_{:d}_round_{:d}_uploads.zip".format(
+            current_user.id, app.config["ROUND"]
+        )
+        return send_file(temp_file, download_name=file_to_send_name)
+
+    form = AttackUpload()
+    if form.validate_on_submit():
+        uploaded_file = request.files["file"]
+        filename = "team_{:d}_{:s}_attack.zip".format(
+            current_user.team().id, datetime.utcnow().strftime("%m_%d_%Y_%H:%M:%S")
+        )
+        save_path = os.path.join(
+            app.root_path, app.config["TEMPORARY_UPLOAD_FOLDER"], filename
+        )
+        uploaded_file.save(save_path)
+        treat_uploaded_attack.delay(filename, current_user.id)
+        flash(
+            "Attack received! Evaluation in process, you will receive results by email shortly"
+        )
+        return redirect(url_for("team", team_name=current_user.team().team_name))
+    return render_template("attack.html", form=form)
 
 
 @app.route("/defence/", methods=["GET", "POST"])
@@ -220,10 +262,12 @@ def defence():
     form = DefenceUpload()
     if form.validate_on_submit():
         uploaded_file = request.files["file"]
-        filename = "team_{:d}_{:s}.zip".format(
+        filename = "team_{:d}_{:s}_defence.zip".format(
             current_user.team().id, datetime.utcnow().strftime("%m_%d_%Y_%H:%M:%S")
         )
-        save_path = os.path.join(app.config["TEMPORARY_UPLOAD_FOLDER"], filename)
+        save_path = os.path.join(
+            app.root_path, app.config["TEMPORARY_UPLOAD_FOLDER"], filename
+        )
         uploaded_file.save(save_path)
         treat_uploaded_defence.delay(filename, current_user.id)
         flash(
