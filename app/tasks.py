@@ -1,4 +1,7 @@
+from hashlib import sha256
 import os
+import sys
+from tkinter import ROUND
 from zipfile import ZipFile
 
 import pandas as pd
@@ -6,7 +9,8 @@ from flask_mail import Message
 from pandas import DataFrame
 
 from app import app, celery, db, mail
-from app.models import Defence, User, Utility
+from app.models import Attack, Defence, User, Utility
+import secrets
 
 
 @celery.task
@@ -62,7 +66,21 @@ def evaluate_utility(df: DataFrame) -> Utility:
 
 
 def split_train_test_set(df: DataFrame) -> tuple[DataFrame, DataFrame, DataFrame]:
-    test_set_cellid_rep = df[["cell_id", "rep"]].drop_duplicates().sample(frac=0.1)
+    rnd = secrets.randbits(128)
+    # we recreate rep indexes to avoid identification of the repetitions that are missing in the trainset and therefore are in the test set, making classification way easier.
+    df["rep"] = [
+        int.from_bytes(
+            sha256("{}{}{}".format(rnd, cell_id, rep).encode()).digest()[:3],
+            byteorder=sys.byteorder,
+        )
+        for cell_id, rep in zip(df["rep"], df["cell_id"])
+    ]
+
+    test_set_cellid_rep = (
+        df[["cell_id", "rep"]]
+        .drop_duplicates()
+        .sample(app.config["NB_TRACES_TO_CLASSIFY"])
+    )
     test_set_rows = df.merge(test_set_cellid_rep)
 
     cellid_rep_to_rnd_index = (
@@ -77,9 +95,15 @@ def split_train_test_set(df: DataFrame) -> tuple[DataFrame, DataFrame, DataFrame
     test_set_capture_index = test_set_rows.assign(
         capture_id=test_set_rows[["cell_id", "rep"]].apply(tuple, axis=1).map(m)
     )
-    test_set = test_set_capture_index[["capture_id", "direction_size", "timestamp"]]
-    verification_set = test_set_capture_index[["capture_id", "cell_id", "rep"]]
-    train_set = df.drop(index=test_set_rows.index)
+
+    test_set = test_set_capture_index[
+        ["capture_id", "direction_size", "timestamp"]
+    ].sort_values(by=["capture_id", "timestamp"])
+    verification_set = test_set_capture_index[["capture_id", "cell_id"]].sort_values(
+        by=["capture_id", "cell_id"]
+    )
+    train_set = df.drop(index=test_set_rows.index).sort_values(by=["cell_id", "rep"])
+
     return test_set, verification_set, train_set
 
 
@@ -89,7 +113,9 @@ def treat_uploaded_defence(filename: str, user_id: int) -> None:
     user = User.query.get(user_id)
     team = user.team()
     member1, member2 = team.members()
-    filepath = os.path.join(app.config["TEMPORARY_UPLOAD_FOLDER"], filename)
+    filepath = os.path.join(
+        app.root_path, app.config["TEMPORARY_UPLOAD_FOLDER"], filename
+    )
     error_msg = ""
     with ZipFile(filepath, "r") as zip:
         with zip.open(zip.filelist[0], "r") as data_set:
@@ -107,20 +133,23 @@ def treat_uploaded_defence(filename: str, user_id: int) -> None:
                     )
                     test_set, verification_set, train_set = split_train_test_set(df)
                     test_set_filname = os.path.join(
+                        app.root_path,
                         app.config["UPLOAD_FOLDER"],
-                        "team_{}_test.csv.zip".format(team.id),
+                        app.config["TEST_FILENAME_FORMAT"].format(team.id),
                     )
                     test_set.to_csv(test_set_filname, index=False)
 
                     verif_set_filname = os.path.join(
+                        app.root_path,
                         app.config["UPLOAD_FOLDER"],
-                        "team_{}_verif.csv.zip".format(team.id),
+                        app.config["VERIF_FILENAME_FORMAT"].format(team.id),
                     )
                     verification_set.to_csv(verif_set_filname, index=False)
 
                     train_set_filname = os.path.join(
+                        app.root_path,
                         app.config["UPLOAD_FOLDER"],
-                        "team_{}_train.csv.zip".format(team.id),
+                        app.config["TRAIN_FILENAME_FORMAT"].format(team.id),
                     )
                     train_set.to_csv(train_set_filname, index=False)
 
@@ -133,6 +162,78 @@ def treat_uploaded_defence(filename: str, user_id: int) -> None:
                             team.team_name, filename[:-4], utility
                         ),
                     )
+    if error_msg != "":
+        send_mail.delay(
+            "Your upload for Secret Race Strolling failed",
+            [member1.email, member2.email],
+            "Hey Team {:s},\nYour upload {:s} failed.\n{:s}\n".format(
+                team.team_name, filename[:-4], error_msg
+            ),
+        )
+    os.remove(filepath)
+
+
+def verify_attack(df: DataFrame, user: User) -> tuple[bool, str]:
+    if (
+        df.count()
+        != app.config["NB_TRACES_TO_CLASSIFY"] * app.config["MATCHES_PER_TEAM"]
+    ):
+        return (
+            False,
+            "Your file does not contain classification for every trace you should attack",
+        )
+    if not set(df["team_id"].drop_duplicates()) == set(
+        user.team_id_to_attack_in_round(app.config["ROUND"])
+    ):
+        return (
+            False,
+            "Your file contains attacks against teams you should not attack or does not attack all teams you should attack",
+        )
+    if not set(df["capture_id"].drop_duplicates()) == set(
+        [i for i in range(app.config["NB_TRACES_TO_CLASSIFY"])]
+    ):
+        return (
+            False,
+            "Your file contains invalid capture_id indexes",
+        )
+    if (
+        not (abs(df.filter(regex="proba_cell_id_\d+") - 0.5) <= 0.5).all().all()
+        or not (
+            abs(df.filter(regex="proba_cell_id_\d+").sum(axis=1) - 1.0) <= 10 ** (-10)
+        ).all()
+    ):
+        return (
+            False,
+            "Your output probabilities are not a valid distribution",
+        )
+    return True, ""
+
+
+def evaluate_attack_perf(df: DataFrame, user: User) -> Attack:
+    for attacked_id in user.team_id_to_attack(app.config["ROUND"]):
+        pass
+
+
+@celery.task
+def treat_uploaded_attack(filename: str, user_id: int) -> None:
+    # The task is called only is the user had a team
+    user = User.query.get(user_id)
+    team = user.team()
+    member1, member2 = team.members()
+    filepath = os.path.join(
+        app.root_path, app.config["TEMPORARY_UPLOAD_FOLDER"], filename
+    )
+    error_msg = ""
+    with ZipFile(filepath, "r") as zip:
+        with zip.open(zip.filelist[0], "r") as data_set:
+            df = pd.read_csv(data_set)
+            if set(df.columns) != set(app.config["ATTACK_COLUMNS"]):
+                error_msg = "Your attack does not have the correct columns.\nPlease follow the upload instructions.\n"
+            else:
+                ok_df, error_msg = verify_dataframe(df)
+                if ok_df:
+                    accuracy = evaluate_attack_perf(df)
+                    # TODO
     if error_msg != "":
         send_mail.delay(
             "Your upload for Secret Race Strolling failed",
