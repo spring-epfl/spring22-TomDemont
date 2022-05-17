@@ -1,6 +1,22 @@
 {% extends "base.html" %}
+{% import 'bootstrap/wtf.html' as wtf %}
 
 {% block app_content %}
-<h1>Attack upload of {{ user.username }}</h1>
 
+<h1>Manage your attacks</h1>
+<hr>
+<div class="row">
+    <div class="col-md-4">
+        <a href="{{ url_for('attack', download='True') }}" class="btn btn-primary">Download
+            attack</a>
+        <br>
+        <p>Use the above button to upload your attack (train and test sets)</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        {{ wtf.quick_form(form) }}
+    </div>
+</div>
 {% endblock %}
