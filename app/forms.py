@@ -126,3 +126,35 @@ class DefenceUpload(FlaskForm):
                     "Your upload should contain a dataset in the right file format"
                 )
         file.data.stream.seek(0)
+
+
+class AttackUpload(FlaskForm):
+    file = FileField(
+        "CSV Attack Classification",
+        validators=[
+            FileRequired(),
+            FileAllowed(
+                app.config["UPLOAD_EXTENSIONS"],
+                message="Please, see upload file format instructions",
+            ),
+        ],
+    )
+    submit = SubmitField("Register")
+
+    def validate_file(self, file):
+        filename = file.data.filename
+        if filename == "":
+            raise ValidationError("No file uploaded")
+        with ZipFile(file.data.stream, "r") as zip:
+            name_list = zip.namelist()
+            if len(name_list) != 1:
+                print(name_list)
+                raise ValidationError(
+                    "Your upload does not contain the correct files. Check your hidden files"
+                )
+            file_ext = os.path.splitext(name_list[0])[1]
+            if file_ext not in app.config["DATASET_EXTENSIONS"]:
+                raise ValidationError(
+                    "Your upload should contain a dataset in the right file format"
+                )
+        file.data.stream.seek(0)
