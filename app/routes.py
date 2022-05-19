@@ -186,7 +186,7 @@ def join_team():
     return redirect(url_for("team", team_name=team.team_name))
 
 
-@app.route("/attack/", methods=["GET"])
+@app.route("/attack/", methods=["GET", "POST"])
 @login_required
 def attack():
     if not app.config["ATTACK_PHASE"]:
@@ -314,8 +314,10 @@ def team(team_name):
 
     defence = team.defences.order_by(Defence.timestamp.desc()).first()
 
-    attacks = team.attacks().paginate(
-        page_attack, app.config["MATCHES_PER_TEAM"], False
+    attacks = (
+        team.attacks()
+        .order_by(Attack.timestamp.desc())
+        .paginate(page_attack, app.config["MATCHES_PER_TEAM"], False)
     )
     attack_next_url = (
         url_for(

@@ -4,7 +4,7 @@ from typing import Any, Optional
 from flask import url_for
 from flask_login import UserMixin
 from flask_sqlalchemy import Pagination
-from sqlalchemy import func, or_
+from sqlalchemy import func, or_, and_
 from sqlalchemy.orm import Query
 from werkzeug.security import check_password_hash, generate_password_hash
 
@@ -78,6 +78,11 @@ class Team(db.Model):
 
     def defence_matches_in_round(self, round) -> Query:
         return self.defence_matches.filter(Match.round == round)
+
+    def get_match_against(self, round, other_team_id) -> Query:
+        return self.attack_matches.filter(
+            and_(Match.round == round, Match.defender_team_id == other_team_id)
+        )
 
     def __repr__(self) -> str:
         return "<Team {} (id: {})>".format(self.team_name, self.id)
@@ -206,6 +211,16 @@ class Match(db.Model):
         return db.session.query(Attack).filter(Attack.match_id == self.id).count() > 0
 
     @staticmethod
+    def nb_matches_in_round(round: int, attacker_team_id: int) -> int:
+        return (
+            db.session.query(Match)
+            .filter(
+                and_(Match.round == round, Match.attacker_team_id == attacker_team_id)
+            )
+            .count()
+        )
+
+    @staticmethod
     def paginate_and_itemize_match_query(
         matches: Query, page: int, matches_per_page: int, current_user_team: Team
     ) -> tuple[Pagination, list[dict]]:
@@ -241,17 +256,17 @@ class Match(db.Model):
 
 
 class AttackResult:
-    def __init__(self, accuracy, false_positive) -> None:
+    def __init__(self, accuracy, auc_roc_score) -> None:
         self.accuracy = accuracy
-        self.false_positive = false_positive
+        self.auc_roc_score = auc_roc_score
 
     def __repr__(self) -> str:
-        return "<AttackResult - accuracy: {}, false_positive: {}>".format(
-            self.accuracy, self.false_positive
+        return "<AttackResult - accuracy: {}, auc_roc_score: {}>".format(
+            self.accuracy, self.auc_roc_score
         )
 
     def to_dict(self) -> dict:
-        return {"accuracy": self.accuracy, "false_positive": self.false_positive}
+        return {"accuracy": self.accuracy, "auc_roc_score": self.auc_roc_score}
 
 
 class Attack(db.Model):
@@ -261,4 +276,6 @@ class Attack(db.Model):
     timestamp = db.Column(db.DateTime, index=True, default=datetime.utcnow)
 
     def __repr__(self) -> str:
-        return "<Attack - for match {} (id: {})".format(self.match, self.id)
+        return "<Attack - for match against {}, scored: {}".format(
+            self.match.defender_team, self.results
+        )

@@ -33,7 +33,7 @@ class Config(object):
     TEMPORARY_UPLOAD_FOLDER = "temp_uploads"
     DATASET_COLUMNS = ["cell_id", "rep", "direction_size", "timestamp"]
     ATTACK_COLUMNS = ["team_id", "capture_id"] + [
-        "prob_cell_id_{}".format(i) for i in range(1, 101)
+        "proba_cell_id_{}".format(i) for i in range(1, 101)
     ]
     CELERY_BROKER_URL = "redis://localhost:6379/0"
     CELERY_RESULT_BACKEND = "redis://localhost:6379/0"
