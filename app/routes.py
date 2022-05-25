@@ -113,47 +113,91 @@ def generate_matches():
     if not current_user.is_admin:
         # Only the admins should be able to generate the matches
         abort(403)
+    round = request.args.get("round", 0, type=int)
+    if round == 0:
+        # those special cases are treated as query for the "usages" of the function
+        return render_template("generate_matches.html")
+    if round < 0:
+        flash("Cannot have a negative round number")
+        abort(400)
+    if db.session.query(Match.round).filter(Match.round == round).count() > 0:
+        flash("Already generated this round")
+        abort(400)
+    if (
+        round > 1
+        and db.session.query(Match.round).filter(Match.round == round - 1).count() == 0
+    ):
+        flash("You have not generated the matches for round {}".format(round - 1))
+        abort(400)
+    # we only keep teams of participants non-admin
+    all_teams = [t for t in Team.query.all() if not t.has_admin()]
+    nb_teams = len(all_teams)
+    # we make sure not to have more than nb_teams-1 matches per team to avoid self-matching
+    matches_per_team = min([app.config["MATCHES_PER_TEAM"], nb_teams - 1])
+    # we shuffle the whole teams list to have random matches
+    shuffle(all_teams)
+    for team_index in range(nb_teams):
+        for match_index in range(1, matches_per_team + 1):
+            # we circle through the shuffled participants list
+            # every team is matched to adversaries in indexes after theirs
+            # it makes sure they have random adversaries that are not themselves
+            m = Match(
+                attacker_team_id=all_teams[team_index].id,
+                defender_team_id=all_teams[(team_index + match_index) % nb_teams].id,
+                round=round,
+            )
+            db.session.add(m)
+    db.session.commit()
+    app.config["ROUND"] = round
+    return redirect(url_for("index"))
+
+
+@app.route("/set_phase/", methods=["GET"])
+@login_required
+def set_phase():
+    if not current_user.is_admin:
+        # Only the admins should be able to generate the matches
+        abort(403)
+    phase = request.args.get("phase", "None", type=str)
+    if phase == "Attack":
+        app.config["ATTACK_PHASE"] = True
+        app.config["DEFENCE_PHASE"] = False
+    elif phase == "Defence":
+        app.config["ATTACK_PHASE"] = False
+        app.config["DEFENCE_PHASE"] = True
+    elif phase == "None":
+        app.config["ATTACK_PHASE"] = False
+        app.config["DEFENCE_PHASE"] = False
+    elif phase == "Both":
+        app.config["ATTACK_PHASE"] = True
+        app.config["DEFENCE_PHASE"] = True
     else:
-        round = request.args.get("round", 0, type=int)
-        if round == 0:
-            # those special cases are treated as query for the "usages" of the function
-            return render_template("generate_matches.html")
-        if round < 0:
-            flash("Cannot have a negative round number")
-            abort(400)
-        if db.session.query(Match.round).filter(Match.round == round).count() > 0:
-            flash("Already generated this round")
-            abort(400)
-        if (
-            round > 1
-            and db.session.query(Match.round).filter(Match.round == round - 1).count()
-            == 0
-        ):
-            flash("You have not generated the matches for round {}".format(round - 1))
-            abort(400)
-        # we only keep teams of participants non-admin
-        all_teams = list(filter(lambda x: not x.has_admin(), Team.query.all()))
-        nb_teams = len(all_teams)
-        # we make sure not to have more than nb_teams-1 matches per team to avoid self-matching
-        matches_per_team = min([app.config["MATCHES_PER_TEAM"], nb_teams - 1])
-        # we shuffle the whole teams list to have random matches
-        shuffle(all_teams)
-        for team_index in range(nb_teams):
-            for match_index in range(1, matches_per_team + 1):
-                # we circle through the shuffled participants list
-                # every team is matched to adversaries in indexes after theirs
-                # it makes sure they have random adversaries that are not themselves
-                m = Match(
-                    attacker_team_id=all_teams[team_index].id,
-                    defender_team_id=all_teams[
-                        (team_index + match_index) % nb_teams
-                    ].id,
-                    round=round,
-                )
-                db.session.add(m)
-        db.session.commit()
-        app.config["ROUND"] = round
-        return redirect(url_for("index"))
+        flash("Please follow the instructions")
+        abort(400)
+    return render_template("set_phase.html")
+
+
+@app.route("/leaderboard/", methods=["GET"])
+@login_required
+def leaderboard():
+    teams = Team.query.all()
+    team_items = [
+        {
+            "team_name": team.team_name,
+            "utility_score": team.utility_score(app.config["ROUND"]),
+            "attack_peformance": team.attack_performance(app.config["ROUND"]),
+            "score": team.total_score(app.config["ROUND"]),
+        }
+        for team in teams
+    ]
+    team_items = sorted(
+        team_items,
+        key=lambda x: x["score"] if isinstance(x["score"], float) else -1.0,
+        reverse=True,
+    )
+    for rank, team in enumerate(team_items):
+        team["ranking"] = rank + 1
+    return render_template("leaderboard.html", team_items=team_items)
 
 
 @app.route("/user/<username>", methods=["GET"])
