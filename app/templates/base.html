@@ -38,6 +38,9 @@ Secret Race Strolling
         {% if current_user.is_admin %}
         <li><a href="{{ url_for('generate_matches') }}">Generate Matches</a></li>
         {% endif %}
+        {% if current_user.is_admin %}
+        <li><a href="{{ url_for('set_phase') }}">Set Phase</a></li>
+        {% endif %}
         <li><a>Round: {{ config["ROUND"] }}</a></li>
         {% if config["DEFENCE_PHASE"] %}
         <li><a style="color:darkblue">Defence</a></li>
@@ -50,6 +53,7 @@ Secret Race Strolling
         {% if current_user.is_anonymous %}
         <li><a href="{{ url_for('login') }}">Login</a></li>
         {% else %}
+        <li><a href="{{ url_for('leaderboard') }}">Leaderboard</a></li>
         <li><a href="{{ url_for('user', username=current_user.username) }}">Profile</a></li>
         <li><a href="{{ url_for('logout') }}">Logout</a></li>
         {% endif %}
