@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 from flask import url_for
 from flask_login import UserMixin
@@ -7,7 +7,7 @@ from flask_sqlalchemy import Pagination
 from sqlalchemy import func, or_, and_
 from sqlalchemy.orm import Query
 from werkzeug.security import check_password_hash, generate_password_hash
-
+from math import log10
 from app import db, login
 
 
@@ -84,6 +84,56 @@ class Team(db.Model):
             and_(Match.round == round, Match.defender_team_id == other_team_id)
         )
 
+    def utility_score(self, round) -> Union[float, str]:
+        defence = (
+            self.defences.filter(Defence.round == round)
+            .order_by(Defence.timestamp.desc())
+            .first()
+        )
+        return (
+            log10(defence.utility.aggregated_score())
+            if defence is not None
+            else "No defence uploaded yet"
+        )
+
+    def attack_performance(self, round) -> Union[float, str]:
+        atk_matches_in_round = self.attack_matches.filter(
+            Match.round == round
+        ).subquery()
+        self_atk_subq = (
+            self.attacks()
+            .join(atk_matches_in_round, Attack.match_id == atk_matches_in_round.c.id)
+            .subquery()
+        )
+        self_most_recent_atks_rows = (
+            db.session.query(self_atk_subq, func.max(self_atk_subq.c.timestamp))
+            .group_by(self_atk_subq.c.match_id)
+            .subquery()
+        )
+        self_most_recent_atks = (
+            db.session.query(Attack)
+            .join(
+                self_most_recent_atks_rows, Attack.id == self_most_recent_atks_rows.c.id
+            )
+            .all()
+        )
+        return (
+            100
+            * sum(
+                [attack.results.aggregated_result() for attack in self_most_recent_atks]
+            )
+            if len(self_most_recent_atks) == Match.nb_matches_in_round(round, self.id)
+            else "Some attacks remain to do"
+        )
+
+    def total_score(self, round) -> Union[float, str]:
+        atk_perf = self.attack_performance(round)
+        util_score = self.utility_score(round)
+        if isinstance(atk_perf, float) and isinstance(util_score, float):
+            return atk_perf / util_score
+        else:
+            return "Cannot compute full score yet"
+
     def __repr__(self) -> str:
         return "<Team {} (id: {})>".format(self.team_name, self.id)
 
@@ -156,7 +206,7 @@ class Utility:
         self.med_time = med_time
 
     def __repr__(self):
-        return "<Utility: \nmed_in_volume: {:.1f} bytes\nmed_out_volume: {:.1f} bytes\nmed_time: {:.3f} seconds>".format(
+        return "<Utility: \nmed_in_volume: {:.0f} bytes,\nmed_out_volume: {:.0f} bytes,\nmed_time: {:.3f} seconds>".format(
             abs(self.med_in_volume), self.med_out_volume, self.med_time
         )
 
@@ -172,6 +222,9 @@ class Utility:
             "mean_time": self.mean_time,
             "med_time": self.med_time,
         }
+
+    def aggregated_score(self) -> float:
+        return abs(self.med_in_volume) * self.med_out_volume * self.med_time
 
 
 class Defence(db.Model):
@@ -261,12 +314,15 @@ class AttackResult:
         self.auc_roc_score = auc_roc_score
 
     def __repr__(self) -> str:
-        return "<AttackResult - accuracy: {}, auc_roc_score: {}>".format(
+        return "<AttackResult - accuracy: {:.4f}, auc_roc_score: {:.5f}>".format(
             self.accuracy, self.auc_roc_score
         )
 
     def to_dict(self) -> dict:
         return {"accuracy": self.accuracy, "auc_roc_score": self.auc_roc_score}
+
+    def aggregated_result(self) -> float:
+        return self.auc_roc_score * self.accuracy
 
 
 class Attack(db.Model):
