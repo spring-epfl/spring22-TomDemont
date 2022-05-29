@@ -19,7 +19,7 @@ login = LoginManager(app)
 login.login_view = "login"  # function name for login
 bootstrap = Bootstrap(app)
 mail = Mail(app)
-celery = Celery(app.name, broker=app.config["CELERY_BROKER_URL"])
+celery = Celery(app.name, broker=app.config["CELERY_BROKER_URL"], backend=app.config["RESULT_BACKEND"])
 celery.conf.update(app.config)
 
 if not app.debug:
@@ -55,4 +55,4 @@ if not app.debug:
     app.logger.setLevel(logging.INFO)
     app.logger.info("Secret Race Strolling startup")
 
-from app import errors, models, routes, tasks
+from app import errors, models, routes, tasks_attack, tasks_control, tasks_defence
