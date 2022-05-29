@@ -19,15 +19,16 @@ class Config(object):
     MAIL_USE_SSL = os.environ.get("MAIL_USE_SSL") is not None
     MAIL_USERNAME = os.environ.get("MAIL_USERNAME")
     MAIL_PASSWORD = os.environ.get("MAIL_PASSWORD")
-    ADMINS = ["tom.demont@epfl.ch"]
+    ADMINS = os.environ.get("ADMINS")
     MAIL_DEFAULT_SENDER = os.environ.get("MAIL_DEFAULT_SENDER")
+    MAIL_TEST_RECEIVER_FORMAT = "tom.demont+{}@epfl.ch"
     MATCHES_PER_TEAM = os.environ.get("MATCHES_PER_TEAM") or 3
     MATCHES_PER_PAGE = os.environ.get("MATCHES_PER_TEAM") or 40 * MATCHES_PER_TEAM
     DEFENCE_PHASE = True
     ATTACK_PHASE = True
     ROUND = 1
-    UPLOAD_EXTENSIONS = ["zip"]
-    DATASET_EXTENSIONS = [".csv"]
+    UPLOAD_EXTENSIONS = ["zip"]  # WTF verificator need no dot
+    DATASET_EXTENSIONS = ["csv"]
     MAX_CONTENT_LENGTH = 32 * 1024 * 1024  # 32MB
     UPLOAD_FOLDER = "uploads"
     TEMPORARY_UPLOAD_FOLDER = "temp_uploads"
@@ -36,7 +37,7 @@ class Config(object):
         "proba_cell_id_{}".format(i) for i in range(1, 101)
     ]
     CELERY_BROKER_URL = "redis://localhost:6379/0"
-    CELERY_RESULT_BACKEND = "redis://localhost:6379/0"
+    RESULT_BACKEND = "redis://localhost:6379/0"
     TEST_FILENAME_FORMAT = "team_{}_test.csv.zip"
     TRAIN_FILENAME_FORMAT = "team_{}_train.csv.zip"
     VERIF_FILENAME_FORMAT = "team_{}_verif.csv.zip"
