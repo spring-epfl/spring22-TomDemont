@@ -11,9 +11,17 @@
 <hr>
 {% if matches %}
 <h2>Matches assigned to {{ team.team_name }}</h2>
-{% for match in matches %}
-{% include '_match.html' %}
-{% endfor %}
+<table class="table table-hover">
+    <tr>
+        <th>Attacker Team</th>
+        <th>Defender Team</th>
+        <th>Round</th>
+        <th>Match State</th>
+    </tr>
+    {% for match in matches %}
+    {% include '_match.html' %}
+    {% endfor %}
+</table>
 <nav aria-label="...">
     <ul class="pager">
         <li class="previous{% if not match_prev_url %} disabled{% endif %}">
@@ -31,13 +39,30 @@
 {% endif %}
 {% if defence %}
 <h2>{{ team.team_name }}'s defence</h2>
-{% include '_defence.html' %}
+<table class="table table-hover">
+    <tr>
+        <th>Team's defence</th>
+        <th>Utility</th>
+        <th>Timestamp</th>
+        <th>Round</th>
+    </tr>
+    {% include '_defence.html' %}
+</table>
 {% endif %}
 {% if attacks %}
 <h2>{{ team.team_name }}'s attacks</h2>
-{% for attack in attacks %}
-{% include '_attack.html' %}
-{% endfor %}
+<table class="table table-hover">
+    <tr>
+        <th>Attacker Team</th>
+        <th>Defender Team</th>
+        <th>Results</th>
+        <th>Timestamp</th>
+        <th>Round</th>
+    </tr>
+    {% for attack in attacks %}
+    {% include '_attack.html' %}
+    {% endfor %}
+</table>
 <nav aria-label="...">
     <ul class="pager">
         <li class="previous{% if not attack_prev_url %} disabled{% endif %}">

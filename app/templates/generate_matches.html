@@ -2,6 +2,8 @@
 
 {% block app_content %}
 <h1>Generating macthes</h1>
-<p>Usage: <code>{{ url_for('generate_matches', round="i") }}</code> where <code>i</code> is the round index you want to generate matches for.</p>
+<p>Usage: <a
+        href="{{ url_for('generate_matches', round='0') }}"><code>{{ url_for('generate_matches', round="i") }}</code></a>
+    where <code>i</code> is the round index you want to generate matches for.</p>
 <p><a href="{{ url_for('index') }}">Back</a></p>
 {% endblock %}
