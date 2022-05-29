@@ -7,22 +7,21 @@ from wtforms import (
     BooleanField,
     IntegerField,
     PasswordField,
+    SelectField,
     StringField,
     SubmitField,
-    SelectField,
-    FormField,
 )
 from wtforms.validators import (
     DataRequired,
     Email,
     EqualTo,
+    Length,
     NumberRange,
     ValidationError,
-    Length,
 )
 
 from app import app
-from app.models import User, Team
+from app.models import Team, User
 
 
 class LoginForm(FlaskForm):
@@ -96,6 +95,25 @@ class RegistrationForm(FlaskForm):
             )
 
 
+def validate_uploaded_dataset(file):
+    filename = file.data.filename
+    if filename == "":
+        raise ValidationError("No file uploaded")
+    with ZipFile(file.data.stream, "r") as zip:
+        name_list = zip.namelist()
+        if len(name_list) != 1:
+            print(name_list)
+            raise ValidationError(
+                "Your upload does not contain the correct files. Check your hidden files"
+            )
+        file_ext = os.path.splitext(name_list[0])[1]
+        if file_ext[1:] not in app.config["DATASET_EXTENSIONS"]:
+            raise ValidationError(
+                "Your upload should contain a dataset in the right file format"
+            )
+    file.data.stream.seek(0)
+
+
 class DefenceUpload(FlaskForm):
     file = FileField(
         "CSV Defence Trace",
@@ -107,25 +125,10 @@ class DefenceUpload(FlaskForm):
             ),
         ],
     )
-    submit = SubmitField("Register")
+    submit = SubmitField("Upload")
 
     def validate_file(self, file):
-        filename = file.data.filename
-        if filename == "":
-            raise ValidationError("No file uploaded")
-        with ZipFile(file.data.stream, "r") as zip:
-            name_list = zip.namelist()
-            if len(name_list) != 1:
-                print(name_list)
-                raise ValidationError(
-                    "Your upload does not contain the correct files. Check your hidden files"
-                )
-            file_ext = os.path.splitext(name_list[0])[1]
-            if file_ext not in app.config["DATASET_EXTENSIONS"]:
-                raise ValidationError(
-                    "Your upload should contain a dataset in the right file format"
-                )
-        file.data.stream.seek(0)
+        validate_uploaded_dataset(file)
 
 
 class AttackUpload(FlaskForm):
@@ -139,22 +142,7 @@ class AttackUpload(FlaskForm):
             ),
         ],
     )
-    submit = SubmitField("Register")
+    submit = SubmitField("Upload")
 
     def validate_file(self, file):
-        filename = file.data.filename
-        if filename == "":
-            raise ValidationError("No file uploaded")
-        with ZipFile(file.data.stream, "r") as zip:
-            name_list = zip.namelist()
-            if len(name_list) != 1:
-                print(name_list)
-                raise ValidationError(
-                    "Your upload does not contain the correct files. Check your hidden files"
-                )
-            file_ext = os.path.splitext(name_list[0])[1]
-            if file_ext not in app.config["DATASET_EXTENSIONS"]:
-                raise ValidationError(
-                    "Your upload should contain a dataset in the right file format"
-                )
-        file.data.stream.seek(0)
+        validate_uploaded_dataset(file)
