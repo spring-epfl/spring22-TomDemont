@@ -136,3 +136,6 @@ redis-stable
 
 # Not push the heavy files
 *.zip
+
+# previous config.py before running `celery upgrade settings config.py`
+config.py.orig
