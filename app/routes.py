@@ -1,17 +1,10 @@
 import os
+import tempfile
 from datetime import datetime
 from random import shuffle
 from zipfile import ZipFile
 
-from flask import (
-    abort,
-    flash,
-    redirect,
-    render_template,
-    request,
-    url_for,
-    send_file,
-)
+from flask import abort, flash, redirect, render_template, request, send_file, url_for
 from flask_login import (
     current_user,
     fresh_login_required,
@@ -24,8 +17,8 @@ from werkzeug.urls import url_parse
 from app import app, db
 from app.forms import AttackUpload, DefenceUpload, LoginForm, RegistrationForm
 from app.models import Attack, Defence, Match, Team, User
-from app.tasks import send_mail, treat_uploaded_defence, treat_uploaded_attack
-import tempfile
+from app.tasks_attack import treat_uploaded_attack
+from app.tasks_defence import treat_uploaded_defence
 
 
 @app.route("/")
@@ -195,8 +188,11 @@ def leaderboard():
         key=lambda x: x["score"] if isinstance(x["score"], float) else -1.0,
         reverse=True,
     )
-    for rank, team in enumerate(team_items):
-        team["ranking"] = rank + 1
+    for rank, team_item in enumerate(team_items):
+        team_item["ranking"] = rank + 1
+        for key, val in team_item.items():
+            if isinstance(val, float):
+                team_item[key] = "{:,.2f}".format(val)
     return render_template("leaderboard.html", team_items=team_items)
 
 
