@@ -42,19 +42,13 @@ Secret Race Strolling
         <li><a href="{{ url_for('set_phase') }}">Set Phase</a></li>
         {% endif %}
         <li><a>Round: {{ config["ROUND"] }}</a></li>
-        {% if config["DEFENCE_PHASE"] %}
-        <li><a style="color:darkblue">Defence</a></li>
-        {% endif %}
-        {% if config["ATTACK_PHASE"] %}
-        <li><a style="color:darkred">Attack</a></li>
-        {% endif %}
       </ul>
       <ul class="nav navbar-nav navbar-right">
         {% if current_user.is_anonymous %}
         <li><a href="{{ url_for('login') }}">Login</a></li>
         {% else %}
         <li><a href="{{ url_for('leaderboard') }}">Leaderboard</a></li>
-        <li><a href="{{ url_for('user', username=current_user.username) }}">Profile</a></li>
+        <li><a href="{{ url_for('team', team_name=current_user.team().team_name) if current_user.has_team() else url_for('user', username=current_user.username)}}">Profile</a></li>
         <li><a href="{{ url_for('logout') }}">Logout</a></li>
         {% endif %}
       </ul>
