@@ -2,12 +2,13 @@
 
 {% block app_content %}
 <h1>Profile of team {{ team.team_name }}</h1>
-<h4>Members: {% if member1 %} <a href="{{ url_for('user', username=member1.username) }}"> {{ member1.username }}</a>
+<h3>Members: {% if member1 %} <a href="{{ url_for('user', username=member1.username) }}"> {{ member1.username }}</a>
     {% else %} <a href="{{ url_for('join_team', team_name=team.team_name) }}"> [Join {{ team.team_name }}]</a>
     {% endif %} and {% if member2 %} <a href="{{ url_for('user', username=member2.username) }}">
         {{ member2.username }}</a>
     {% else %} <a href="{{ url_for('join_team', team_name=team.team_name) }}"> [Join {{ team.team_name }}]</a>
-    {% endif %}</h4>
+    {% endif %}</3>
+<h4>Team id: {{ team.id }}</h4>
 <hr>
 {% if matches %}
 <h2>Matches assigned to {{ team.team_name }}</h2>
