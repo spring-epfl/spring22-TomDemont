@@ -267,7 +267,7 @@ def attack():
                     )
                 except FileNotFoundError:
                     print("File not found: {:s}".format(file))
-        file_to_send_name = "user_{:d}_round_{:d}_uploads.zip".format(
+        file_to_send_name = "user_{:d}_round_{:d}_sets_to_attack.zip".format(
             current_user.id, app.config["ROUND"]
         )
         return send_file(temp_file, download_name=file_to_send_name)
