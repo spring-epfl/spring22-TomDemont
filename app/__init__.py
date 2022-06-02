@@ -1,3 +1,7 @@
+"""
+Initialization of the app package. Regular Flask app variable creation with its modules.
+"""
+
 import logging
 import os
 from logging.handlers import RotatingFileHandler, SMTPHandler
@@ -7,10 +11,11 @@ from config import Config
 from flask import Flask
 from flask_bootstrap import Bootstrap
 from flask_login import LoginManager
+from flask_mail import Mail
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
-from flask_mail import Mail
 
+"""Initialize all components used by the app"""
 app = Flask(__name__)
 app.config.from_object(Config)
 db = SQLAlchemy(app)
@@ -19,11 +24,19 @@ login = LoginManager(app)
 login.login_view = "login"  # function name for login
 bootstrap = Bootstrap(app)
 mail = Mail(app)
-celery = Celery(app.name, broker=app.config["CELERY_BROKER_URL"], backend=app.config["RESULT_BACKEND"])
+celery = Celery(
+    app.name,
+    broker=app.config["CELERY_BROKER_URL"],
+    backend=app.config["RESULT_BACKEND"],
+)
 celery.conf.update(app.config)
 
+"""Handles logging by mail and on files if we are not in debug mode"""
 if not app.debug:
     if app.config["MAIL_SERVER"] and not app.config["MAIL_USE_SSL"]:
+        # we cannot yet have mail logs with a SMTP over SSL connection
+        # https://docs.python.org/3/library/logging.handlers.html#logging.handlers.SMTPHandler
+        # There exists code to circumvent this https://github.com/dycw/ssl-smtp-handler but not widely adopted
         auth = None
         if app.config["MAIL_USERNAME"] or app.config["MAIL_PASSWORD"]:
             auth = (app.config["MAIL_USERNAME"], app.config["MAIL_PASSWORD"])
@@ -55,4 +68,5 @@ if not app.debug:
     app.logger.setLevel(logging.INFO)
     app.logger.info("Secret Race Strolling startup")
 
+# import in the bottom to avoid circular dependencies
 from app import errors, models, routes, tasks_attack, tasks_control, tasks_defence
