@@ -11,7 +11,7 @@ sleep 2.5
 
 celery -A app.celery worker --loglevel=info &
 
-sleep 4
+sleep 3
 
 flask run &
 
