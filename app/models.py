@@ -309,20 +309,20 @@ class Match(db.Model):
 
 
 class AttackResult:
-    def __init__(self, accuracy, auc_roc_score) -> None:
+    def __init__(self, accuracy, roc_auc_score) -> None:
         self.accuracy = accuracy
-        self.auc_roc_score = auc_roc_score
+        self.roc_auc_score = roc_auc_score
 
     def __repr__(self) -> str:
-        return "<AttackResult - accuracy: {:.4f}, auc_roc_score: {:.5f}>".format(
-            self.accuracy, self.auc_roc_score
+        return "<AttackResult - accuracy: {:.4f}, roc_auc_score: {:.5f}>".format(
+            self.accuracy, self.roc_auc_score
         )
 
     def to_dict(self) -> dict:
-        return {"accuracy": self.accuracy, "auc_roc_score": self.auc_roc_score}
+        return {"accuracy": self.accuracy, "roc_auc_score": self.roc_auc_score}
 
     def aggregated_result(self) -> float:
-        return self.auc_roc_score * self.accuracy
+        return self.roc_auc_score * self.accuracy
 
 
 class Attack(db.Model):
