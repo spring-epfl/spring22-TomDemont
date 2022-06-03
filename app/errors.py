@@ -38,5 +38,5 @@ def method_not_allowed(error):
 
 
 @app.errorhandler(413)
-def too_large(errot):
+def too_large(error):
     return render_template("413.html"), 413
