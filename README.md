@@ -2,7 +2,23 @@
 
 Repository for Tom Demont semester project: Privacy Competition Platform for [SecretStroll](https://github.com/spring-epfl/CS-523-public/tree/master/secretstroll) project in CS-523.
 
-## Timeline
+## Introduction and purpose
+
+## Launch instructions
+
+## User (student) guide
+
+## User (admin) guide
+
+## Software architecture
+
+### Timeline
+
+### Data model
+
+### Code hierarchy
+
+<!-- ## Timeline
 
 The software is developped following the idea of the timeline desribed in ![timeline.png](timeline.png)
 
@@ -47,7 +63,7 @@ Run Celery worker with
 
 ```zsh
 celery -A app.celery worker --loglevel=info
-```
+``` -->
 
 ## Credits
 
