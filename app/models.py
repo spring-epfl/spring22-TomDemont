@@ -1,3 +1,6 @@
+"""Defines data model with SQLAlchemy ORM"""
+
+
 from datetime import datetime
 from math import log10
 from typing import Optional, Union
@@ -12,6 +15,8 @@ from app import db, login
 
 
 class User(UserMixin, db.Model):
+    """User of the application. Used for defining access control with UserMixin class. This user is expected to be mapped to one student."""
+
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(64), index=True, unique=True)
     email = db.Column(db.String(96), index=True, unique=True)
@@ -20,6 +25,7 @@ class User(UserMixin, db.Model):
     is_admin = db.Column(db.Boolean, default=False)
 
     def team(self) -> Optional["Team"]:
+        """Gives the Team object this user is member of or None if they're in no team."""
         return (
             db.session.query(Team)
             .filter(or_(Team.member1_id == self.id, Team.member2_id == self.id))
@@ -27,38 +33,37 @@ class User(UserMixin, db.Model):
         )
 
     def has_team(self) -> bool:
+        """Returns whether this user is member of a team"""
         return self.team() is not None
 
-    def has_match(self) -> bool:
-        team = self.team()
-        return (
-            self.has_team()
-            and team.defence_matches.count() > 0
-            and team.defence_matches.count() > 0
-        )
-
     def set_password(self, password: str) -> None:
+        """Sets the password for this user by storing its salted hash. Does not push to db !"""
         # basically hashes with random salt using PBKDF2, see https://werkzeug.palletsprojects.com/en/2.0.x/utils/#module-werkzeug.security
         self.password_hash = generate_password_hash(password)
 
     def check_password(self, password: str) -> bool:
+        """Check if password matches this user stored password salted hash"""
         return check_password_hash(self.password_hash, password)
 
     def __repr__(self) -> str:
         return "<User {} (id: {})>".format(self.username, self.id)
 
 
+# Required by flask-login module
 @login.user_loader
 def load_user(id: int) -> User:
     return User.query.get(int(id))
 
 
 class Team(db.Model):
+    """Team composed of 2 users. Basis for Attack/Defence system. Most of the application is working around these actors."""
+
     id = db.Column(db.Integer, primary_key=True)
     team_name = db.Column(db.String(64), index=True, unique=True)
     member1_id = db.Column(db.Integer, db.ForeignKey("user.id"), unique=True)
     member2_id = db.Column(db.Integer, db.ForeignKey("user.id"), unique=True)
 
+    # reference to the defences published by this team
     defences = db.relationship(
         "Defence",
         backref="defender_team",
@@ -66,6 +71,7 @@ class Team(db.Model):
         lazy="dynamic",
     )
 
+    # reference to the matches in which this team has a defence role
     defence_matches = db.relationship(
         "Match",
         backref="defender_team",
@@ -73,6 +79,7 @@ class Team(db.Model):
         lazy="dynamic",
     )
 
+    # reference to the matches in which this team has an attacker role
     attack_matches = db.relationship(
         "Match",
         backref="attacker_team",
@@ -81,21 +88,23 @@ class Team(db.Model):
     )
 
     def members(self) -> tuple[Optional[User], Optional[User]]:
+        """Returns the tuple containing the users this team is composed of (potentially None tuple members if the team is not full)."""
         return (
             db.session.query(User).filter(User.id == self.member1_id).first(),
             db.session.query(User).filter(User.id == self.member2_id).first(),
         )
 
     def has_admin(self) -> bool:
+        """Returns whether this team has an admin member"""
         mem1, mem2 = self.members()
-        return (mem1 is not None and mem1.is_admin) or (
-            mem2 is not None and mem2.is_admin
-        )
+        return (mem1 and mem1.is_admin) or (mem2 and mem2.is_admin)
 
     def is_full(self) -> bool:
-        return self.member1_id is not None and self.member2_id is not None
+        """Returns whether this team has all its members"""
+        return self.member1_id and self.member2_id
 
     def attacks(self) -> Query:
+        """Returns a query for all the attacks this team's ever made."""
         self_attacks = (
             db.session.query(Match.id)
             .filter(Match.attacker_team_id == self.id)
@@ -106,6 +115,7 @@ class Team(db.Model):
         )
 
     def teams_to_attack_in_round(self, round: int) -> Query:
+        """Returns a query for all the teams this team should attack during the round"""
         attack_matches_sub = self.attack_matches.filter(Match.round == round).subquery()
         return (
             db.session.query(Team)
@@ -114,44 +124,51 @@ class Team(db.Model):
         )
 
     def team_id_to_attack_in_round(self, round: int) -> list[int]:
+        """Returns the list of team_id this team should attack during the round"""
         teams_to_attack_subq = self.teams_to_attack_in_round(round=round).subquery()
         tuple_team_id_to_attack = db.session.query(teams_to_attack_subq.c.id).all()
+        # we must unpack the returned columns to have only a list[int]
         return [t[0] for t in tuple_team_id_to_attack]
 
     def defence_matches_in_round(self, round) -> Query:
+        """Returns a query for this team's matches in which this team is defender in the round"""
         return self.defence_matches.filter(Match.round == round)
 
     def get_match_against(self, round, other_team_id) -> Query:
+        """Returns a query for the matches in which this team attacks the team with id other_team_id during the round"""
         return self.attack_matches.filter(
             and_(Match.round == round, Match.defender_team_id == other_team_id)
         )
 
     def utility_score(self, round) -> Union[float, str]:
+        """Returns either the utility score of this team for Defence in the round, or the error message to be displayed. The considered defence is the most recent one of this round. The highest the score, the least utility consumming the defence is."""
         defence = (
             self.defences.filter(Defence.round == round)
             .order_by(Defence.timestamp.desc())
             .first()
         )
         return (
-            log10(defence.utility.aggregated_score())
-            if defence is not None
-            else "No defence uploaded yet"
+            defence.utility.aggregated_score() if defence else "No defence uploaded yet"
         )
 
     def attack_performance(self, round) -> Union[float, str]:
+        """Returns either the attack performance score of this team for Attack in the round, or the error message to be displayed. For each match in the round, only the latest attack is considered for the computation. The returned result is the average of attack performance if all assigned attacks have been performed, the error message string is returned otherwise. The highest score, the better the attack."""
         atk_matches_in_round = self.attack_matches.filter(
             Match.round == round
         ).subquery()
+        # query holding the attacks performed during this rounds
         self_atk_subq = (
             self.attacks()
             .join(atk_matches_in_round, Attack.match_id == atk_matches_in_round.c.id)
             .subquery()
         )
+        # query holding the most recent attack for each match along with the timestamp
         self_most_recent_atks_rows = (
             db.session.query(self_atk_subq, func.max(self_atk_subq.c.timestamp))
             .group_by(self_atk_subq.c.match_id)
             .subquery()
         )
+        # all the Attack objects of the most recent attack for each performed match in this round
         self_most_recent_atks = (
             db.session.query(Attack)
             .join(
@@ -160,19 +177,20 @@ class Team(db.Model):
             .all()
         )
         return (
-            100
-            * sum(
+            sum(
                 [attack.results.aggregated_result() for attack in self_most_recent_atks]
             )
+            / len(self_most_recent_atks)
             if len(self_most_recent_atks) == Match.nb_matches_in_round(round, self.id)
             else "Some attacks remain to do"
         )
 
     def total_score(self, round) -> Union[float, str]:
+        """Returns either the aggregated performance score of this team in the round, or the error message to be displayed. The total score is the product of the utility and attack performance metrics. We can see it as (accuracy*roc_auc_score)/(time_consumption*bandwidth_consumption). If not all attacks are done, the attack perf score is set to 1.0 (this should be less than a random classifier's performance with the current settings and for secretstroll application)"""
         atk_perf = self.attack_performance(round)
         util_score = self.utility_score(round)
-        if isinstance(atk_perf, float) and isinstance(util_score, float):
-            return atk_perf / util_score
+        if isinstance(util_score, float):
+            return (atk_perf if isinstance(atk_perf, float) else 1.0) * util_score
         else:
             return "Cannot compute full score yet"
 
@@ -224,10 +242,15 @@ class Utility:
         }
 
     def aggregated_score(self) -> float:
-        return abs(self.med_in_volume) * self.med_out_volume * self.med_time
+        """Returns an aggreagted value for the utility metric. Magic numbers 8*8 for having nice score values. We take care of taking absolute value as the in_volume is represented by a negative number of bytes"""
+        return (8 * 8) / (
+            log10(abs(self.med_in_volume * self.med_out_volume * self.med_time))
+        )
 
 
 class Defence(db.Model):
+    """Representation a team's defence."""
+
     id = db.Column(db.Integer, primary_key=True)
     defender_team_id = db.Column(db.Integer, db.ForeignKey("team.id"))
     utility = db.Column(db.PickleType)
@@ -239,6 +262,8 @@ class Defence(db.Model):
 
 
 class Match(db.Model):
+    """Representation of a a match between two teams. This Match can conceptually be repeated many times (the attacker can attack many times) and there should be unique triplet (defender_team, attacker_team, round)."""
+
     id = db.Column(db.Integer, primary_key=True)
     defender_team_id = db.Column(db.Integer, db.ForeignKey("team.id"))
     attacker_team_id = db.Column(db.Integer, db.ForeignKey("team.id"))
@@ -252,6 +277,7 @@ class Match(db.Model):
         ),
     )
 
+    # reference to the attacks performed for this match
     attacks = db.relationship(
         "Attack",
         backref="match",
@@ -259,12 +285,9 @@ class Match(db.Model):
         lazy="dynamic",
     )
 
-    def match_done(self) -> bool:
-        """Returns whether the attacker already made an attack or not for this match"""
-        return db.session.query(Attack).filter(Attack.match_id == self.id).count() > 0
-
     @staticmethod
     def nb_matches_in_round(round: int, attacker_team_id: int) -> int:
+        """Gives the number of matches attributed during this round to a team with the attacker role."""
         return (
             db.session.query(Match)
             .filter(
@@ -302,6 +325,10 @@ class Match(db.Model):
             m.match_done = m.id in attacks_done
         return paginated, matches_items
 
+    def match_done(self) -> bool:
+        """Returns whether the attacker already made an attack or not for this match"""
+        return db.session.query(Attack).filter(Attack.match_id == self.id).count() > 0
+
     def __repr__(self) -> str:
         return "<Match {} defends against {} (id: {})>".format(
             self.defender_team, self.attacker_team, self.id
@@ -309,6 +336,8 @@ class Match(db.Model):
 
 
 class AttackResult:
+    """Stores the attack performance metrics kept to evaluate an attack"""
+
     def __init__(self, accuracy, roc_auc_score) -> None:
         self.accuracy = accuracy
         self.roc_auc_score = roc_auc_score
@@ -322,10 +351,13 @@ class AttackResult:
         return {"accuracy": self.accuracy, "roc_auc_score": self.roc_auc_score}
 
     def aggregated_result(self) -> float:
-        return self.roc_auc_score * self.accuracy
+        """Returns an aggreagted value for the attack performance metric. Magic number 1000 for displaying nice score values in the context of Secret Race Strolling"""
+        return 1000 * self.roc_auc_score * self.accuracy
 
 
 class Attack(db.Model):
+    """Representation of an attack made for a match by an attacker"""
+
     id = db.Column(db.Integer, primary_key=True)
     match_id = db.Column(db.Integer, db.ForeignKey("match.id"))
     results = db.Column(db.PickleType)
