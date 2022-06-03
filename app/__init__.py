@@ -69,4 +69,4 @@ if not app.debug:
     app.logger.info("Secret Race Strolling startup")
 
 # import in the bottom to avoid circular dependencies
-from app import errors, models, routes, tasks_attack, tasks_control, tasks_defence
+from app import cached_items, errors, models, routes, tasks_attack, tasks_control, tasks_defence

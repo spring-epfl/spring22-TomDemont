@@ -74,3 +74,6 @@ class Config(object):
     MEAN_NB_REP_PER_CLASS = int(os.environ.get("MEAN_NB_REP_PER_CLASS") or 32)
     DEVIATION_NB_REP_PER_CLASS = int(os.environ.get("DEVIATION_NB_REP_PER_CLASS") or 7)
     ROWS_PER_CAPTURE = int(os.environ.get("ROWS_PER_CAPTURE") or 5)
+    LEADERBOARD_CACHE_TIME = int(
+        os.environ.get("LEADERBOARD_CACHE_TIME") or 5
+    )  # in seconds
