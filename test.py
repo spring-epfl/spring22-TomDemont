@@ -32,8 +32,8 @@ class UserModelCase(unittest.TestCase):
         db.session.add(t1)
         db.session.commit()
 
-        self.assertEquals(u1.team(), t1)
-        self.assertEquals(u2.team(), t1)
+        self.assertEqual(u1.team(), t1)
+        self.assertEqual(u2.team(), t1)
         self.assertTrue(u1.has_team())
         self.assertFalse(u3.has_team())
 

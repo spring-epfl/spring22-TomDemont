@@ -3,6 +3,7 @@ import os
 from dotenv import load_dotenv
 
 basedir = os.path.abspath(os.path.dirname(__file__))
+# loads environment variables from '.env' file
 load_dotenv(os.path.join(basedir, ".env"))
 
 
@@ -45,21 +46,21 @@ class Config(object):
     )
     NB_CLASSES = int(os.environ.get("NB_CLASSES") or 100)
     DEFENCE_COLUMNS = [
-        col.strip() for col in os.environ.get("DEFENCE_COLUMNS").split(",") if col != ""
-    ] or [
-        "cell_id",
-        "rep",
-        "direction_size",
-        "timestamp",
+        col.strip()
+        for col in (
+            os.environ.get("DEFENCE_COLUMNS") or "cell_id,rep,direction_size,timestamp"
+        ).split(",")
+        if col != ""
     ]  # Column names for the uploaded defence dataframe, comma separated. First elem should represent the class, second the repetition id for this class
     PROBA_CLASS_PREFIX = "proba_class_"  # weirdly, Python does not recognize this as defined for the below array generation. Should make sure this is equal to the below prefix
     ATTACK_COLUMNS = (
         [
             col.strip()
-            for col in os.environ.get("ATTACK_COLUMNS").split(",")
+            for col in (os.environ.get("ATTACK_COLUMNS") or "team_id,capture_id").split(
+                ","
+            )
             if col != ""
         ]
-        or ["team_id", "capture_id"]
     ) + [
         "proba_class_" + "{}".format(i) for i in range(1, NB_CLASSES + 1)
     ]  # Column names for the uploaded attack dataframe, comma separated. Automatically appends the proba_cell_id_{} columns, required for performance evaluation. First elem should represent the team_id attacked, second the id of the attacked feature
