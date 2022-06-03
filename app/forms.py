@@ -1,3 +1,5 @@
+"""Form creation for the application's purposes. Uses the Flask WTF module to create secure forms"""
+
 import os
 from zipfile import ZipFile
 
@@ -25,6 +27,8 @@ from app.models import Team, User
 
 
 class LoginForm(FlaskForm):
+    """Handles the login of users by their username and password"""
+
     username = StringField("Username", validators=[DataRequired(), Length(max=64)])
     password = PasswordField("Password", validators=[DataRequired()])
     remember_me = BooleanField("Remember Me")
@@ -32,6 +36,8 @@ class LoginForm(FlaskForm):
 
 
 class RegistrationForm(FlaskForm):
+    """Handles the registration of new user"""
+
     username = StringField("Username", validators=[DataRequired()])
     email = StringField("Email", validators=[DataRequired(), Email()])
     password = PasswordField("Password", validators=[DataRequired()])
@@ -45,6 +51,7 @@ class RegistrationForm(FlaskForm):
             NumberRange(100000, 999999, "Please enter a valid Sciper"),
         ],
     )
+    # the values are given dynamically at runtime
     team_select = SelectField(
         "Team selection", validators=[DataRequired()], default="New team"
     )
@@ -65,6 +72,7 @@ class RegistrationForm(FlaskForm):
 
     def validate_email(self, email):
         user = User.query.filter_by(email=email.data).first()
+        # email addresses are unique per user
         if user is not None:
             raise ValidationError("Please use a different email address.")
 
@@ -95,7 +103,8 @@ class RegistrationForm(FlaskForm):
             )
 
 
-def validate_uploaded_file(file, inner_file_extensions: list[str]):
+def validate_uploaded_zip_file(file, inner_file_extensions: list[str]) -> None:
+    """Checks an uploaded zip file contains only one file and this file has a valid extension"""
     filename = file.data.filename
     if filename == "":
         raise ValidationError("No file uploaded")
@@ -114,6 +123,8 @@ def validate_uploaded_file(file, inner_file_extensions: list[str]):
 
 
 class DefenceUpload(FlaskForm):
+    """Handles upload of defence dataset"""
+
     file = FileField(
         "CSV Defence Trace",
         validators=[
@@ -127,10 +138,12 @@ class DefenceUpload(FlaskForm):
     submit = SubmitField("Upload")
 
     def validate_file(self, file):
-        validate_uploaded_file(file, app.config["DEFENCE_FILE_EXTENSIONS"])
+        validate_uploaded_zip_file(file, app.config["DEFENCE_FILE_EXTENSIONS"])
 
 
 class AttackUpload(FlaskForm):
+    """Handles upload of attack classication"""
+
     file = FileField(
         "CSV Attack Classification",
         validators=[
@@ -144,4 +157,4 @@ class AttackUpload(FlaskForm):
     submit = SubmitField("Upload")
 
     def validate_file(self, file):
-        validate_uploaded_file(file, app.config["ATTACK_FILE_EXTENSIONS"])
+        validate_uploaded_zip_file(file, app.config["ATTACK_FILE_EXTENSIONS"])
