@@ -37,7 +37,7 @@ class Config(object):
         "csv"
     ]  # Accepted extension of the zipped file for the defence upload
     MAX_CONTENT_LENGTH = (
-        (int(os.environ.get("MAX_CONTENT_LENGTH")) or 32) * 1024 * 1024
+        int(os.environ.get("MAX_CONTENT_LENGTH") or 32) * 1024 * 1024
     )  # in Megabytes, max size of uploaded (compressed) file
     UPLOAD_FOLDER = os.environ.get("UPLOAD_FOLDER") or "uploads"
     TEMPORARY_UPLOAD_FOLDER = (
