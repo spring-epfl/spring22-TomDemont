@@ -46,7 +46,7 @@ if not app.debug:
         mail_handler = SMTPHandler(
             mailhost=(app.config["MAIL_SERVER"], app.config["MAIL_PORT"]),
             fromaddr="no-reply@" + app.config["MAIL_SERVER"],
-            toaddrs=app.config["ADMINS"],
+            toaddrs=app.config["ADMIN"],
             subject="Secret Race Strolling Failure",
             credentials=auth,
             secure=secure,
