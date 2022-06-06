@@ -20,7 +20,7 @@ class Config(object):
     MAIL_USE_SSL = os.environ.get("MAIL_USE_SSL") is not None
     MAIL_USERNAME = os.environ.get("MAIL_USERNAME")
     MAIL_PASSWORD = os.environ.get("MAIL_PASSWORD")
-    ADMINS = os.environ.get("ADMINS")
+    ADMIN = os.environ.get("ADMIN")
     MAIL_DEFAULT_SENDER = os.environ.get("MAIL_DEFAULT_SENDER")
     MAIL_TEST_RECEIVER_FORMAT = "tom.demont+{}@epfl.ch"  # for testing and generating fake user database, should not be kept on deployment
     MATCHES_PER_TEAM = int(os.environ.get("MATCHES_PER_TEAM") or 3)
