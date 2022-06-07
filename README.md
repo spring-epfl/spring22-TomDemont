@@ -10,14 +10,14 @@ In this context, students are expected to use the collected trace to extract fea
 
 It is possible, in the basic shape of the application, to obtain a very efficient and accurate classifier. Students must provide a reflection on issues and counter-measures to avoid the privacy leakage due to website fingerprinting. The current project takes place at this point: to extend Secretstroll, we aim to create a privacy competition platform where students could try different implementation and countermeasures, observe and measure the utility cost, and, afterward, attack other student's implementations to see the remaining accuracy of privacy attack machine learning based model.
 
-This fulfills multiple pedagogical goals:
+This fulfils multiple pedagogical goals:
 
-* Provide students utility measures for different implementations and see the utility/privacy tradeoff interactively
+* Provide students utility measures for different implementations and see the utility/privacy trade-off interactively
 * Give students matches with train and test sets to train a model and get meaningful performance metrics for the quality of their classifier against others' implementation
 * Show students a taste of an interactive and live attack-defence based study of privacy preserving mechanisms' implementation
 * Give to the course team an automated tool to observe and manage student's competition
 
-This platforms aims to gather the interactive competition aspects of [Kaggle](https://www.kaggle.com/) or [AICrowd](https://www.aicrowd.com/) platforms, while adding the inter-students match aspect to multiply the variety of network traces to attack and evaluate on both the utility and privacy metrics to observe the necessary tradeoff.
+This platforms aims to gather the interactive competition aspects of [Kaggle](https://www.kaggle.com/) or [AICrowd](https://www.aicrowd.com/) platforms, while adding the inter-students match aspect to multiply the variety of network traces to attack and evaluate on both the utility and privacy metrics to observe the necessary trade-off.
 
 ## Launch instructions
 
@@ -118,6 +118,47 @@ Adds an admin named `admin` and password `put-the-admin-password`. This user can
 
 ## Testing and toy examples
 
+In order to have an experience of the running of the competition, the scripts in [`db_scripts.py`](db_scripts.py) and in the folder [`attack_defence_test_scripts`](attack_defence_test_scripts) provides scripts, data and code snippets to test the platform.
+
+### Test db population
+
+The following commands allow to properly flush all the database data and populate 10 fake users in 5 different teams, all with password `admin`. ⚠️ This can't be reverted, use with care:
+
+```bash
+flask shell
+```
+
+Launches the python CLI with the app context.
+
+```python
+populate_test_users()
+```
+
+### Test defence upload
+
+The file `attack_defence_test_scripts/test_defence.csv.zip` contains a csv file in the correct format and is ready to be uploaded as is in the upload defence form. The csv file has the following shape ![test-defence](readme_assets/test_features.png)
+
+You can try to log in as one of the fake user (`alice` for example) upload it and receive the success email if you configured the `MAIL_TEST_RECEIVER_FORMAT` variable as described in [launch instructions](#changing-parameters) to `your.email+{}@yourdomain.tld`. Feel free to change this file and test the failing conditions. The file can be loaded with pandas with `pandas.read_csv("attack_defence_test_scripts/test_defence.csv.zip")` (that will automatically uncompress the file).
+
+### Test attack upload
+
+Once every fake user uploaded a test_defence_set (the same can be used multiple times, it will be split differently), you can login as any non-admin user and start attack. To do so, you can click the `Download attack` button as described in [user (student) guide](#user-student-guide), save the file and uncompress it and put all the zip file inside the archive into the folder [`attack_defence_test_scripts`](attack_defence_test_scripts).
+
+The script [`fingerprint.py`](attack_defence_test_scripts/fingerprinting.py) can read the provided files and output a classification of the test set in the desired compressed csv format.
+
+```bash
+# usage
+python3 fingerprint.py "[int id of the first to attack]" "[int id of the second to attack]" "..."
+```
+
+example, if the folder contains train and test files for `team_1`, `team_4` and `team_5`:
+
+```bash
+python3 fingerprint.py 1 4 5
+```
+
+This will create a file named `my_classification.csv.zip` that can be uploaded to the attack upload form. As in [Test defence upload](#test-defence-upload), you can receive the confirmation email and see your results on the team page.
+
 ## Software architecture
 
 ### Timeline
@@ -128,7 +169,7 @@ Adds an admin named `admin` and password `put-the-admin-password`. This user can
 
 <!-- ## Timeline
 
-The software is developped following the idea of the timeline desribed in ![timeline.png](timeline.png)
+The software is developed following the idea of the timeline described in ![timeline.png](timeline.png)
 
 ## Data model
 
