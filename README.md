@@ -4,11 +4,11 @@ Repository for Tom Demont semester project: Privacy Competition Platform for [Se
 
 ## Introduction and purpose
 
-In the last part of [SecretStroll](https://github.com/spring-epfl/CS-523-public/tree/master/secretstroll) project in CS-523 course, students are asked to test the limits of the sytem they built. To do so, they must simulate the execution of the software and collect the generated network trace. More information on the Secretstroll original system can be found in the [handout](https://github.com/spring-epfl/CS-523-public/blob/master/secretstroll/handout/handout_project_secretstroll.pdf) of the initial project. Here's a schematic representation of the final system: ![secretstroll-system](readme_assets/secretstroll-system.png)
+In the last part of [SecretStroll](https://github.com/spring-epfl/CS-523-public/tree/master/secretstroll) project in CS-523 course, students are asked to test the limits of the system they built. To do so, they must simulate the execution of the software and collect the generated network trace. More information on the Secretstroll original system can be found in the [handout](https://github.com/spring-epfl/CS-523-public/blob/master/secretstroll/handout/handout_project_secretstroll.pdf) of the initial project. Here's a schematic representation of the final system: ![secretstroll-system](readme_assets/secretstroll-system.png)
 
 In this context, students are expected to use the collected trace to extract features and create a classifier that will learn how to associate tor network trace to a grid cell id queried for in the Secretstroll application.
 
-It is possible, in the basic shape of the application, to obtain a very efficient and accurate classifier. Students must provide a reflexion on issues and counter-measures to avoid the privacy leakage due to website fingerprinting. The current project takes place at this point: to extend Secretstroll, we aim to create a privacy competition platform where students could try different implementation and countermeasures, observe and measure the utility cost, and, afterward, attack other student's implementations to see the remaining accuracy of privacy attack machine learning based model.
+It is possible, in the basic shape of the application, to obtain a very efficient and accurate classifier. Students must provide a reflection on issues and counter-measures to avoid the privacy leakage due to website fingerprinting. The current project takes place at this point: to extend Secretstroll, we aim to create a privacy competition platform where students could try different implementation and countermeasures, observe and measure the utility cost, and, afterward, attack other student's implementations to see the remaining accuracy of privacy attack machine learning based model.
 
 This fulfills multiple pedagogical goals:
 
@@ -67,21 +67,36 @@ For ease of use and avoid exporting this variable with `export FLASK_ENV=develop
 * `UPLOAD_FOLDER` and `TEMPORARY_UPLOAD_FOLDER`: the name of the folders to save students files to (expected to already be created)
 * `NB_CLASSES`: the number of possible classes the students are expected to make classification for (the number of grid cell id for Secretstroll).
 * `DEFENCE_COLUMNS`: a string with the comma separated column names the uploaded network traces should have.
-* `ATTACK_COLUMNS`: a string with the comma separated column names the uploaded trace classification should have. Will be appended with `proba_class_i` for `i` in `{1..NB_CASSES}` to hold the probability classification that should output the classifer.
+* `ATTACK_COLUMNS`: a string with the comma separated column names the uploaded trace classification should have. Will be appended with `proba_class_i` for `i` in `{1..NB_CASSES}` to hold the probability classification that should output the classifier.
 * `CELERY_BROKER_URL` and `RESULT_BACKEND`: URLs of the message broker and result backend to use. Initially works with Redis.
 * `NB_TRACES_TO_CLASSIFY`: the number of traces students should make a classification for, the size of the test set.
 * `MEAN_NB_REP_PER_CLASS`: the expected mean amount of network traces to collect per grid cell id query in the Secretstroll system. Corresponds to the number of times the script `attack_defence_test_scripts/capture.sh` should be run by a student.
 * `DEVIATION_NB_REP_PER_CLASS`: the accepted number of amount of traces traces per grid cell id deviating from the mean. Captures being difficult and not always perfect, students having `MEAN_NB_REP_PER_CLASS`±`DEVIATION_NB_REP_PER_CLASS` network traces for the capture on grid cell id `i` have capture accepted by the system.
 * `ROWS_PER_CAPTURE`: the minimum number of rows the file holding network trace capture should have for each capture. Can be seen as the minimum number of packets we require to accept a network trace as valid.
-* `LEADERBOARD_CACHE_TIME`: the number of seconds we should cache the leaderboard.
+* `LEADERBOARD_CACHE_TIME`: the number of seconds we should cache the leader-board.
 
-For ease of use and avoid exporting this variable with `export ADMIN="cs-523@groupes.epfl.ch"`, these variables can be written in the `.env` file, that will be loaded with the python [`dotenv`](https://pypi.org/project/python-dotenv/) module.
+For ease of use and avoid exporting this variable with `export ADMIN="cs-523@groupes.epfl.ch"`, these variables can be written in the `.env` file, that will be loaded with the python [`dotenv`](https://pypi.org/project/python-dotenv/) module. All those variables have reasonable default value that should allow the system to run correctly.
 
 ## User (student) guide
 
+Student should first create an account on the `http://127.0.0.1:5000/register` page. They can select a team among the already existing ones or create a new one. They won't be able to change their team later. Once done, they can login and reach all the website's content.
+
+* They can navigate through pages with the upper navigation bar. We'll see the available menus from left to right.
+* In the home page `http://127.0.0.1:5000/index`, they can see, when available, the matches that should be done once those will be generated. ![home-page](readme_assets/home_page.png)
+* The `Round: 1` indicates the current round students are in. See [Timeline](#timeline).
+* The leaderboard page allow students to see their score and ranking ![leaderboard](readme_assets/leaderboard.png)
+* The profile page gives access to either, the user information if they have no team, or the team's information. ![team_page](readme_assets/team_page.png)
+* When made available by the admin, users will see an `Upload Defence` button on the top of each page. Students will there have a file upload form where they can send their compressed csv containing the dataframe of their capture in the correct format ![upload_defence](readme_assets/upload_defence.png).
+* When made available by the admin, students will see an `Attack` button on the top of each page. ![attack](readme_assets/attack.png). There will there be 2 possible actions:
+  * `Download attack`, where they will get a zip file containing zip files for each train set and test set they should provide a classification
+  * Another file upload form where they should be able to upload their classification for the test sets they should've attacked
+* For both attack and defence, see [Testing and toy example](#testing-and-toy-examples) part to learn how to play with these.
+
 ## User (admin) guide
 
-## Testing
+a
+
+## Testing and toy examples
 
 ## Software architecture
 
