@@ -118,7 +118,11 @@ Adds an admin named `admin` and password `put-the-admin-password`. This user can
 
 ## Testing and toy examples
 
-In order to have an experience of the running of the competition, the scripts in [`db_scripts.py`](db_scripts.py) and in the folder [`attack_defence_test_scripts`](attack_defence_test_scripts) provides scripts, data and code snippets to test the platform.
+In order to have an experience of the running of the competition, the scripts in [`db_scripts.py`](db_scripts.py) and in the folder [`attack_defence_test_scripts`](attack_defence_test_scripts) provides scripts, data and code snippets to test the platform. Unit tests are also available to test the model entities and functions, those can be run with:
+
+```bash
+python3 test.py
+```
 
 ### Test db population
 
@@ -161,58 +165,51 @@ This will create a file named `my_classification.csv.zip` that can be uploaded t
 
 ## Software architecture
 
+In order to allow development on top of this project, here's a quick description of some aspects of the architecture of the software.
+
 ### Timeline
+
+The software is developed following the idea of the timeline described here:
+![timeline.png](readme_assets/timeline.png)
+Note that the multiple round aspect has not been explored in the score computation: the current implementation considers each round independent and resets the leaderboard between each round. However it's totally possible to augment this anc consider aggregation of multiple rounds' scores for the total score calculus. The main modification that should be done is the implementation of a scoring aggregation for multiple rounds in [`app/routes.py`](app/routes.py) and [`app/models.py`](app/models.py).
+
+This timeline suggests that we separate strictly the attack and defence phases. Indeed, the software could support both being available at the same time, but our pondering on the pedagogical impact lead us to think that this would overwhelm students. Therefore, splitting both phases allows to concentrate on the correction and implementation of the specific part. Students will be able to clearly see both aspects evolving one after the other, earning points with good utility score but taking care of not being "too easy to attack", and leading to giving "privacy leakage" points to adversaries.
 
 ### Data model
 
+The database model can be found under `srs_model.xml` and can be visualized on the tool [https://ondras.zarovi.cz/sql/demo/](https://ondras.zarovi.cz/sql/demo/).
+
+![model](readme_assets/srs_model.png)
+
+This describes the current relational model between the entities defined with [SQLAlchemy](https://www.sqlalchemy.org/) ORM module in the [`app/models.py`](app/models.py) file. This model allows us to follow the constructive structure of the software's entities: we create user, belonging to team, uploading their Defence. After that, we assign matches where we'll produce eventually many instances of attacks per match, in order to maximize the score obtained in the match.
+
 ### Code hierarchy
 
-<!-- ## Timeline
+The hierarchy of this code follows the standard hierarchy of Flask application, without the need for Blueprint patterns. Here's a quick description of the different file and their purposes:
 
-The software is developed following the idea of the timeline described in ![timeline.png](timeline.png)
-
-## Data model
-
-The database model can be found under `srs_model.xml` and can be visualized on the tool [https://ondras.zarovi.cz/sql/demo/](https://ondras.zarovi.cz/sql/demo/).
-![model](srs_model.png)
-
-## Run instructions
-
-### Setup of virtual environment
-
-Once in the cloned folder, I suggest you create a python virtual environment for this project:
-
-```zsh
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-```
-
-### Running the server
-
-Most environment variables should be set in the `.flaskenv` file. If you don't want to use it or have undeclared environment variable, export those in your environment before running e.g.:
-
-```zsh
-export FLASK_APP=srs.py
-```
-
-Then run the server with:
-
-```zsh
-flask run
-```
-
-Run Redis message broker with
-
-```zsh
-./run-redis.sh
-```
-
-Run Celery worker with
-
-```zsh
-celery -A app.celery worker --loglevel=info
-``` -->
+* [`srs.py`](srs.py): the application's location, loaded with the command `flask run`
+* [`test.py`](test.py): the unit tests for the application
+* [`config.py`](config.py): the `Config` object, passed at app module initialization
+* [`db_scripts.py`](db_scripts.py): the scripts used for flushing db and putting test users. See [Testing and toy examples](#testing-and-toy-examples)
+* [`run-redis.sh`](run-redis.sh): scripts dealing with installation and running of Redis message broker
+* [`run-srs.sh`](run-srs.sh): launch script. See [Launch instructions](#launch-instructions)
+* [`app.db`](app.db): the sqlite database file holding the database
+* [`.flaskenv`](.flaskenv): file holding Flask related environment variables. See [Changing parameters](#changing-parameters)
+* [`migrations`](migrations): folder created at database initialization. [This post](https://blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-iv-database) is helpful to understand its purpose and how to initialize/migrate the database.
+* [`logs`](logs): holds the logs created by the app
+* [`attack_defence_test_scripts`](attack_defence_test_scripts): contains scripts to test the functioning of system in real conditions. See [Testing and toy examples](#testing-and-toy-examples)
+* [`app`](app): the module containing all the app system
+  * [`app/__init__.py`](app/__init__.py): initializes the app module and all the flask extension modules it uses
+  * [`app/routes.py`](app/routes.py): main router for the application. Entrypoint for all the HTTP queries made to the server
+  * [`app/models.py`](app/models.py): creation with SQLAlchemy of the object relational model for the application's entities, along with the creation of database interaction functions
+  * [`app/forms.py`](app/forms.py): creation of the web forms with Flask WTForm module
+  * [`app/errors.py`](app/errors.py): handlers of HTTP errors for Flask app
+  * [`app/cached_items.py`](app/cached_items.py): contains the objects used for caching (currently, only the leaderboard items in order to prevent triggering re-computation)
+  * [`app/tasks_control.py`](app/tasks_control.py): contains the celery tasks for handling control message, currently, mail sending
+  * [`app/tasks_defence.py`](app/tasks_defence.py): contains the celery tasks for handling the student's upload of defence trace
+  * [`app/tasks_attack.py`](app/tasks_attack.py): contains the celery tasks for handling the student's upload of attack classification
+  * [`app/templates`](app/templates/): contains the HTML templates rendered with the flask Jinja engine.
+  * [`app/uploads`](app/uploads/) and [`app/temp_uploads`](app/temp_uploads/): contains the files uploaded by students. `uploads` aims to keep the train, test and verification sets for the whole competition. `temp_uploads` only holds the raw uploaded files in order to let the celery workers have access to it and perform their tasks. No file should be kept after the tasks
 
 ## Credits
 

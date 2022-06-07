@@ -104,7 +104,7 @@
 <default>NULL</default></row>
 <row name="utility_score" null="1" autoincrement="0">
 <datatype>BLOB</datatype>
-</row>
+<default>NULL</default></row>
 <row name="timestamp" null="1" autoincrement="0">
 <datatype>TIMESTAMP</datatype>
 <default>NULL</default></row>
