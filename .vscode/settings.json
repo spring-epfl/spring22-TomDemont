@@ -8,5 +8,21 @@
         "*test*.py"
     ],
     "python.testing.pytestEnabled": false,
-    "python.testing.unittestEnabled": true
+    "python.testing.unittestEnabled": true,
+    "cSpell.ignoreWords": [
+        "Secretstroll"
+    ],
+    "cSpell.words": [
+        "CASSES",
+        "dataframe",
+        "flaskenv",
+        "Grinberg",
+        "Kaggle",
+        "LEADERBOARD",
+        "plussed",
+        "proba",
+        "SIGINT",
+        "SQLALCHEMY",
+        "STARTTLS"
+    ]
 }
