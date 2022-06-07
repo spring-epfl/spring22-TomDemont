@@ -94,7 +94,27 @@ Student should first create an account on the `http://127.0.0.1:5000/register` p
 
 ## User (admin) guide
 
-a
+The admin account should be created directly on the server side. This can be done with:
+
+```bash
+flask shell
+```
+
+Which launch the Python3 command line interpreter with the flask context already imported.
+
+```python
+admin = User(username="admin", email=app.config["MAIL_TEST_RECEIVER_FORMAT"].format("admin"), sciper=1000, is_admin=True)
+db.session.add(admin)
+db.session.commit()
+admin.set_password("put-the-admin-password")
+```
+
+Adds an admin named `admin` and password `put-the-admin-password`. This user can log in as a student user would do. This admin has an augmented navigation bar with 2 more menus: ![admin-nav-bar](readme_assets/admin_nav_bar.png)
+
+* Generate Matches brings to the guide page for generating the matches for a new round. Once the GET request is made, the matches are pushed to the database and students can see those on the home page. Note that currently, the leaderboard is only round-wise: when going to the next round, the leaderboard will be reset (the data is not erased from the database though).
+![generate_matches](readme_assets/generate_matches.png)
+* Set Phase allows to change the phase between "attack", "defence", none or both. When reaching the Set Phase page, automatically the phase is set to none: no student can upload attack or defence.
+![set_phase](readme_assets/set_phase.png)
 
 ## Testing and toy examples
 
