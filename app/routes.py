@@ -257,7 +257,7 @@ def defence():
         )
         # we save the file to the temporary upload folder
         uploaded_file.save(save_path)
-        # we start the asychronous job
+        # we start the asynchronous job
         treat_uploaded_defence.delay(filename, current_user.id)
         flash(
             "Defence received! Evaluation in process, you will receive results by email shortly"
@@ -327,7 +327,7 @@ def attack():
         )
         # we save the file to the temporary upload folder
         uploaded_file.save(save_path)
-        # we start the asychronous job
+        # we start the asynchronous job
         treat_uploaded_attack.delay(filename, current_user.id)
         flash(
             "Attack received! Evaluation in process, you will receive results by email shortly"
@@ -351,7 +351,7 @@ def leaderboard():
             {
                 "team_name": team.team_name,
                 "utility_score": team.utility_score(app.config["ROUND"]),
-                "attack_peformance": team.attack_performance(app.config["ROUND"]),
+                "attack_performance": team.attack_performance(app.config["ROUND"]),
                 "score": team.total_score(app.config["ROUND"]),
             }
             for team in teams

@@ -19,14 +19,14 @@ def send_mail(
     """Sends a mail asynchronously with a celery job.
 
     Args:
-        subject: mail subjets
-        receipients: list of email of recepients
+        subject: mail subjects
+        recipients: list of email of recipients
         text_body: the body content of the sent mail
         sender: defines a sender if this one is different from app.config['MAIL_DEFAULT_SENDER']
         attachments: file to be sent as attachment in mail"""
     with app.app_context():
         # requires to recall app context as celery job is not
-        # necessarly aware and we need flask-mail module and context
+        # necessarily aware and we need flask-mail module and context
         msg = Message(subject, sender=sender, recipients=recipients)
         msg.body = text_body + "\nKind regards,\nSecret Race Strolling Team"
         if attachments:

@@ -12,7 +12,7 @@ from app import app, celery, db
 from app.models import Defence, User, Utility
 from app.tasks_control import send_mail
 
-# convinient as called multiple times in this code. Those should not be changed during runtime in any case
+# convenient as called multiple times in this code. Those should not be changed during runtime in any case
 CLASS_NAME = app.config["DEFENCE_COLUMNS"][0]
 REP_NAME = app.config["DEFENCE_COLUMNS"][1]
 MEAN_NB_REP_PER_CLASS = app.config["MEAN_NB_REP_PER_CLASS"]
@@ -143,7 +143,7 @@ def split_train_test_set(df: DataFrame) -> tuple[DataFrame, DataFrame, DataFrame
     )
     # identifies the already selected class, rep pair's indexes in the original dataframe
     indexes_to_drop = df[[CLASS_NAME, REP_NAME]].merge(sub_test_set_all_cell_id).index
-    # selects the remaining class, rep pairs of the test set by sampling NB_TRACES_TO_CLASSIFY - NB_CLASSES captures randomly. The full test set is the concatenation of boths
+    # selects the remaining class, rep pairs of the test set by sampling NB_TRACES_TO_CLASSIFY - NB_CLASSES captures randomly. The full test set is the concatenation of both
     test_set_cellid_rep = pd.concat(
         [
             df[[CLASS_NAME, REP_NAME]]
@@ -175,7 +175,7 @@ def split_train_test_set(df: DataFrame) -> tuple[DataFrame, DataFrame, DataFrame
 
 @celery.task
 def treat_uploaded_defence(filename: str, user_id: int) -> None:
-    """Deals with a file uploaded for defence from its verification to the creation of associated test, train and verfication sets. Made to be triggered asychronously and handled by a celery worker. Once done, the 3 sets are saved in separate compressed files and the Defence resulting is pushed in the database. Depends on the application and here is only valid in the context of network fingerprinting.
+    """Deals with a file uploaded for defence from its verification to the creation of associated test, train and verification sets. Made to be triggered asynchronously and handled by a celery worker. Once done, the 3 sets are saved in separate compressed files and the Defence resulting is pushed in the database. Depends on the application and here is only valid in the context of network fingerprinting.
 
     Args:
         filename: the filename of the file uploaded by user and saved in the temporary upload folder
@@ -225,7 +225,7 @@ def treat_uploaded_defence(filename: str, user_id: int) -> None:
             send_mail.delay(
                 "Your upload for Secret Race Strolling succeeded",
                 [member1.email, member2.email],
-                "Hey Team {:s}\nYour upload {:s} succeded. Here are your utility results:\n {}\n".format(
+                "Hey Team {:s}\nYour upload {:s} succeeded. Here are your utility results:\n {}\n".format(
                     team.team_name, filename[:-4], utility
                 ),
             )

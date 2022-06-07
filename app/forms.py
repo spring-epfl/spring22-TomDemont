@@ -142,7 +142,7 @@ class DefenceUpload(FlaskForm):
 
 
 class AttackUpload(FlaskForm):
-    """Handles upload of attack classication"""
+    """Handles upload of attack classification"""
 
     file = FileField(
         "CSV Attack Classification",

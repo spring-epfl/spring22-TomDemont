@@ -51,7 +51,7 @@ def verify_attack(df: DataFrame, team: Team) -> tuple[bool, str]:
             "Your file contains attacks against teams you should not attack or does not attack all teams you should attack",
         )
     for attacked_id in team.team_id_to_attack_in_round(app.config["ROUND"]):
-        # we verify if we have some bad or missing capture id classifed
+        # we verify if we have some bad or missing capture id classified
         verif_file_path = os.path.join(
             app.root_path,
             app.config["UPLOAD_FOLDER"],
@@ -130,7 +130,7 @@ def evaluate_attack_perf(df: DataFrame, team: Team) -> list[Attack]:
 
 @celery.task
 def treat_uploaded_attack(filename: str, user_id: int) -> None:
-    """Deals with a file uploaded for attack from its verification to the evaluation of its performance. Made to be triggered asychronously and handled by a celery worker. Once done, all the attacks for this user in the current round are pushed to the database. Depends on the application and here is only valid in the context of network fingerprinting.
+    """Deals with a file uploaded for attack from its verification to the evaluation of its performance. Made to be triggered asynchronously and handled by a celery worker. Once done, all the attacks for this user in the current round are pushed to the database. Depends on the application and here is only valid in the context of network fingerprinting.
 
     Args:
         filename: the filename of the file uploaded by user and saved in the temporary upload folder
@@ -159,7 +159,7 @@ def treat_uploaded_attack(filename: str, user_id: int) -> None:
             send_mail.delay(
                 "Your upload for Secret Race Strolling succeeded",
                 [member1.email, member2.email],
-                "Hey Team {:s}\nYour upload {:s} succeded. Here are your utility results:\n {}\n".format(
+                "Hey Team {:s}\nYour upload {:s} succeeded. Here are your utility results:\n {}\n".format(
                     team.team_name, filename[:-4], attacks_repr
                 ),
             )

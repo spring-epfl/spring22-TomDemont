@@ -141,7 +141,7 @@ class Team(db.Model):
         )
 
     def utility_score(self, round) -> Union[float, str]:
-        """Returns either the utility score of this team for Defence in the round, or the error message to be displayed. The considered defence is the most recent one of this round. The highest the score, the least utility consumming the defence is."""
+        """Returns either the utility score of this team for Defence in the round, or the error message to be displayed. The considered defence is the most recent one of this round. The highest the score, the least utility consuming the defence is."""
         defence = (
             self.defences.filter(Defence.round == round)
             .order_by(Defence.timestamp.desc())
@@ -242,7 +242,7 @@ class Utility:
         }
 
     def aggregated_score(self) -> float:
-        """Returns an aggreagted value for the utility metric. Magic numbers 8*8 for having nice score values. We take care of taking absolute value as the in_volume is represented by a negative number of bytes"""
+        """Returns an aggregated value for the utility metric. Magic numbers 8*8 for having nice score values. We take care of taking absolute value as the in_volume is represented by a negative number of bytes"""
         return (8 * 8) / (
             log10(abs(self.med_in_volume * self.med_out_volume * self.med_time))
         )
@@ -351,7 +351,7 @@ class AttackResult:
         return {"accuracy": self.accuracy, "roc_auc_score": self.roc_auc_score}
 
     def aggregated_result(self) -> float:
-        """Returns an aggreagted value for the attack performance metric. Magic number 1000 for displaying nice score values in the context of Secret Race Strolling"""
+        """Returns an aggregated value for the attack performance metric. Magic number 1000 for displaying nice score values in the context of Secret Race Strolling"""
         return 1000 * self.roc_auc_score * self.accuracy
 
 

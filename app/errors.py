@@ -1,4 +1,4 @@
-"""Defines flask app error handlings"""
+"""Defines flask app error handling"""
 
 from flask import render_template
 
