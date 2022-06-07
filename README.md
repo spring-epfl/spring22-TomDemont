@@ -8,27 +8,29 @@ In the last part of [SecretStroll](https://github.com/spring-epfl/CS-523-public/
 
 In this context, students are expected to use the collected trace to extract features and create a classifier that will learn how to associate tor network trace to a grid cell id queried for in the Secretstroll application.
 
-It is possible, in the basic shape of the application, to obtain a very efficient and accurate classifier. Students must provide a reflection on issues and counter-measures to avoid the privacy leakage due to website fingerprinting. The current project takes place at this point: to extend Secretstroll, we aim to create a privacy competition platform where students could try different implementation and countermeasures, observe and measure the utility cost, and, afterward, attack other student's implementations to see the remaining accuracy of privacy attack machine learning based model.
+It is possible, in the initial version of the application, to obtain a very efficient and accurate classifier. Students must provide a reflection on issues and counter-measures to avoid the privacy leakage due to website fingerprinting. The current project takes place at this point: to extend Secretstroll, we aim to create a privacy competition platform where students could try different implementation and countermeasures, observe and measure the utility cost, and, afterward, attack other student's implementations to see the remaining privacy leakage after machine learning based attacks.
 
 This fulfils multiple pedagogical goals:
 
-* Provide students utility measures for different implementations and see the utility/privacy trade-off interactively
+* Provides students utility measures for different implementations and see the utility/privacy trade-off interactively
 * Give students matches with train and test sets to train a model and get meaningful performance metrics for the quality of their classifier against others' implementation
 * Show students a taste of an interactive and live attack-defence based study of privacy preserving mechanisms' implementation
 * Give to the course team an automated tool to observe and manage student's competition
 
-This platforms aims to gather the interactive competition aspects of [Kaggle](https://www.kaggle.com/) or [AICrowd](https://www.aicrowd.com/) platforms, while adding the inter-students match aspect to multiply the variety of network traces to attack and evaluate on both the utility and privacy metrics to observe the necessary trade-off.
+This platforms aims to gather the interactive competition aspects of [Kaggle](https://www.kaggle.com/) or [AICrowd](https://www.aicrowd.com/) platforms, while adding the inter-students match aspect to multiply the variety of network traces to attack and evaluate on both the utility and privacy metrics to observe the trade-off inherent to PETs.
 
 ## Launch instructions
 
 ### Quick launch
+
+First, install the project:
 
 ```bash
 git clone git@github.com:spring-epfl/spring22-TomDemont.git
 cd spring22-TomDemont
 ```
 
-In order to run this project, you need to have Python 3.9 installed. You are advised to create a virtual environment for this, to have a clean install of the requirements:
+In order to run this project, you need to have Python 3.9 installed. You are advised to create a virtual environment for this, in order to have a clean install of the requirements:
 
 ```bash
 python3 -m venv venv
@@ -53,13 +55,13 @@ You can freely change the parameters of the application to adapt it to your need
 For ease of use and avoid exporting this variable with `export FLASK_ENV=development`, this variable can be written in the `.flaskenv` file.
 
 * `SECRET_KEY`: used to sign session cookies. See [SECRET_KEY doc](https://flask.palletsprojects.com/en/2.1.x/config/#SECRET_KEY)
-* `DATABASE_URL`: the URL of the used Database. See [SQLALCHEMY_DATABASE_URI doc](https://flask-sqlalchemy.palletsprojects.com/en/2.x/config/#configuration-keys)
+* `DATABASE_URL`: the URL of the Database. See [SQLALCHEMY_DATABASE_URI doc](https://flask-sqlalchemy.palletsprojects.com/en/2.x/config/#configuration-keys)
 * `MAIL_SERVER` and `MAIL_PORT`: the server and port to use for outgoing mail support.
-* `MAIL_USE_TLS`: whether the outgoing mail should be sent using STARTTLS. True if the variable is set to anything.
-* `MAIL_USE_SSL`: whether the outgoing mail should be sent using SSL. True if the variable is set to anything.
+* `MAIL_USE_TLS`: whether the outgoing mail should be sent using STARTTLS. True if the variable is set to anything non-empty.
+* `MAIL_USE_SSL`: whether the outgoing mail should be sent using SSL. True if the variable is set to anything non-empty.
 * `MAIL_USERNAME` and `MAIL_PASSWORD`: credentials to use for connection to the mail server.
 * `ADMIN`: the admin mail address for sending logging errors
-* `MAIL_DEFAULT_SENDER`: the mail sender for mail support
+* `MAIL_DEFAULT_SENDER`: the mail sender for mail support. See [Flask-Mail](https://pythonhosted.org/Flask-Mail/#configuring-flask-mail)
 * `MAIL_TEST_RECEIVER_FORMAT`: a Python format string for an email address using [plussed addressed email](https://bitwarden.com/help/generator/#username-types). Only used for development and user generation, to test receive student user email addresses.
 * `MATCHES_PER_TEAM`: determines how many matches each team will be assigned at every round (should be less than the number of teams - 1)
 * `MATCHES_PER_PAGE`: determines the number of matches to display on the `/index` page
@@ -75,7 +77,7 @@ For ease of use and avoid exporting this variable with `export FLASK_ENV=develop
 * `ROWS_PER_CAPTURE`: the minimum number of rows the file holding network trace capture should have for each capture. Can be seen as the minimum number of packets we require to accept a network trace as valid.
 * `LEADERBOARD_CACHE_TIME`: the number of seconds we should cache the leader-board.
 
-For ease of use and avoid exporting this variable with `export ADMIN="cs-523@groupes.epfl.ch"`, these variables can be written in the `.env` file, that will be loaded with the python [`dotenv`](https://pypi.org/project/python-dotenv/) module. All those variables have reasonable default value that should allow the system to run correctly.
+For ease of use and avoid exporting this variable with `export ADMIN="cs-523@groupes.epfl.ch"`, these variables can be written in the `.env` file, that will be loaded with the python [`dotenv`](https://pypi.org/project/python-dotenv/) module. All those variables have reasonable default value that should allow the system to run correctly for tests.
 
 ## User (student) guide
 
@@ -86,7 +88,7 @@ Student should first create an account on the `http://127.0.0.1:5000/register` p
 * The `Round: 1` indicates the current round students are in. See [Timeline](#timeline).
 * The leaderboard page allow students to see their score and ranking ![leaderboard](readme_assets/leaderboard.png)
 * The profile page gives access to either, the user information if they have no team, or the team's information. ![team_page](readme_assets/team_page.png)
-* When made available by the admin, users will see an `Upload Defence` button on the top of each page. Students will there have a file upload form where they can send their compressed csv containing the dataframe of their capture in the correct format ![upload_defence](readme_assets/upload_defence.png).
+* When made available by the admin, users will see an `Upload Defence` button on the top of each page. Students will there have a file upload form where they can send their compressed csv containing the dataframe of their capture in the correct format. ![upload_defence](readme_assets/upload_defence.png)
 * When made available by the admin, students will see an `Attack` button on the top of each page. ![attack](readme_assets/attack.png). There will there be 2 possible actions:
   * `Download attack`, where they will get a zip file containing zip files for each train set and test set they should provide a classification
   * Another file upload form where they should be able to upload their classification for the test sets they should've attacked
@@ -113,7 +115,7 @@ Adds an admin named `admin` and password `put-the-admin-password`. This user can
 
 * Generate Matches brings to the guide page for generating the matches for a new round. Once the GET request is made, the matches are pushed to the database and students can see those on the home page. Note that currently, the leaderboard is only round-wise: when going to the next round, the leaderboard will be reset (the data is not erased from the database though).
 ![generate_matches](readme_assets/generate_matches.png)
-* Set Phase allows to change the phase between "attack", "defence", none or both. When reaching the Set Phase page, automatically the phase is set to none: no student can upload attack or defence.
+* Set Phase allows to change the phase between "attack", "defence", none or both. When reaching the Set Phase page, automatically the phase is set to none: no student can upload attack or defence, to have a buffer state and avoid having inconsistencies.
 ![set_phase](readme_assets/set_phase.png)
 
 ## Testing and toy examples
@@ -146,7 +148,7 @@ You can try to log in as one of the fake user (`alice` for example) upload it an
 
 ### Test attack upload
 
-Once every fake user uploaded a test_defence_set (the same can be used multiple times, it will be split differently), you can login as any non-admin user and start attack. To do so, you can click the `Download attack` button as described in [user (student) guide](#user-student-guide), save the file and uncompress it and put all the zip file inside the archive into the folder [`attack_defence_test_scripts`](attack_defence_test_scripts).
+Once every fake user uploaded a test_defence_set (the same can be used multiple times, it will be split differently), you can login as any non-admin user and start attack. To do so, you can click the `Download attack` button as described in [user (student) guide](#user-student-guide), save the file, uncompress it and put all the zip file inside the archive into the folder [`attack_defence_test_scripts`](attack_defence_test_scripts).
 
 The script [`fingerprint.py`](attack_defence_test_scripts/fingerprinting.py) can read the provided files and output a classification of the test set in the desired compressed csv format.
 
