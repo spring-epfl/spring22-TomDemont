@@ -13,16 +13,39 @@
         "Secretstroll"
     ],
     "cSpell.words": [
+        "arcname",
+        "atks",
+        "backref",
         "CASSES",
+        "cellid",
+        "classif",
         "dataframe",
+        "dimitri",
         "flaskenv",
+        "fromaddr",
         "Grinberg",
+        "idxmax",
+        "ignatus",
         "Kaggle",
         "LEADERBOARD",
+        "levelname",
+        "loglevel",
+        "mailhost",
+        "nunique",
         "plussed",
+        "prob",
         "proba",
+        "randbits",
         "SIGINT",
         "SQLALCHEMY",
-        "STARTTLS"
-    ]
+        "STARTTLS",
+        "subq",
+        "toaddrs",
+        "trainset",
+        "verif",
+        "werkzeug",
+        "wtforms",
+        "yourdomain"
+    ],
+    "cSpell.language": "en-GB"
 }
