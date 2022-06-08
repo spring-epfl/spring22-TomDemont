@@ -38,6 +38,13 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
+To have a smooth first startup, it is recommended to download first the [Redis](https://redis.io/) message broker with the following scripts that installs it in a new `redis-stable` folder:
+
+```bash
+./run-redis
+# once installed, you can stop the script with Ctrl-C
+```
+
 Finally, the next script starts (and installs in the folder if not already installed) the [Redis](https://redis.io/) message broker, starts the [Celery](https://docs.celeryq.dev/en/stable/index.html) distributed task queue and the Flask web server in development mode:
 
 ```bash
