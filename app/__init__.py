@@ -30,7 +30,13 @@ celery = Celery(
     backend=app.config["RESULT_BACKEND"],
 )
 celery.conf.update(app.config)
-
+# we create the upload folder if not already existing
+temp_upload_path = os.path.join(app.root_path, app.config["TEMPORARY_UPLOAD_FOLDER"])
+if not os.path.exists(temp_upload_path):
+    os.mkdir(temp_upload_path)
+upload_path = os.path.join(app.root_path, app.config["UPLOAD_FOLDER"])
+if not os.path.exists(upload_path):
+    os.mkdir(upload_path)
 """Handles logging by mail and on files if we are not in debug mode"""
 if not app.debug:
     if app.config["MAIL_SERVER"] and not app.config["MAIL_USE_SSL"]:
@@ -69,4 +75,12 @@ if not app.debug:
     app.logger.info("Secret Race Strolling startup")
 
 # import in the bottom to avoid circular dependencies
-from app import cached_items, errors, models, routes, tasks_attack, tasks_control, tasks_defence
+from app import (
+    cached_items,
+    errors,
+    models,
+    routes,
+    tasks_attack,
+    tasks_control,
+    tasks_defence,
+)

@@ -256,9 +256,6 @@ def defence():
             app.root_path, app.config["TEMPORARY_UPLOAD_FOLDER"], filename
         )
         # we save the file to the temporary upload folder
-        temp_upload_path = os.path.join(app.root_path, app.config["TEMPORARY_UPLOAD_FOLDER"])
-        if not os.path.exists(temp_upload_path):
-            os.mkdir(temp_upload_path)
         uploaded_file.save(save_path)
         # we start the asynchronous job
         treat_uploaded_defence.delay(filename, current_user.id)
@@ -329,10 +326,6 @@ def attack():
             app.root_path, app.config["TEMPORARY_UPLOAD_FOLDER"], filename
         )
         # we save the file to the temporary upload folder
-         # we save the file to the temporary upload folder
-        temp_upload_path = os.path.join(app.root_path, app.config["TEMPORARY_UPLOAD_FOLDER"])
-        if not os.path.exists(temp_upload_path):
-            os.mkdir(temp_upload_path)
         uploaded_file.save(save_path)
         # we start the asynchronous job
         treat_uploaded_attack.delay(filename, current_user.id)
