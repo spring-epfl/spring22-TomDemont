@@ -62,17 +62,17 @@ For ease of use and avoid exporting this variable with `export FLASK_ENV=develop
 
 * `SECRET_KEY`: used to sign session cookies. See [SECRET_KEY doc](https://flask.palletsprojects.com/en/2.1.x/config/#SECRET_KEY)
 * `DATABASE_URL`: the URL of the Database. See [SQLALCHEMY_DATABASE_URI doc](https://flask-sqlalchemy.palletsprojects.com/en/2.x/config/#configuration-keys)
-* `MAIL_SERVER` and `MAIL_PORT`: the server and port to use for outgoing mail support.
-* `MAIL_USE_TLS`: whether the outgoing mail should be sent using STARTTLS. True if the variable is set to anything non-empty.
-* `MAIL_USE_SSL`: whether the outgoing mail should be sent using SSL. True if the variable is set to anything non-empty.
-* `MAIL_USERNAME` and `MAIL_PASSWORD`: credentials to use for connection to the mail server.
-* `ADMIN`: the admin mail address for sending logging errors
-* `MAIL_DEFAULT_SENDER`: the mail sender for mail support. See [Flask-Mail](https://pythonhosted.org/Flask-Mail/#configuring-flask-mail)
+* `MAIL_SERVER` and `MAIL_PORT`: the server and port to use for outgoing email support.
+* `MAIL_USE_TLS`: whether the outgoing email should be sent using STARTTLS. True if the variable is set to anything non-empty.
+* `MAIL_USE_SSL`: whether the outgoing email should be sent using SSL. True if the variable is set to anything non-empty.
+* `MAIL_USERNAME` and `MAIL_PASSWORD`: credentials to use for connection to the email server.
+* `ADMIN`: the admin email address for sending logging errors
+* `MAIL_DEFAULT_SENDER`: the email sender for email support. See [Flask-Mail](https://pythonhosted.org/Flask-Mail/#configuring-flask-mail)
 * `MAIL_TEST_RECEIVER_FORMAT`: a Python format string for an email address using [plussed addressed email](https://bitwarden.com/help/generator/#username-types). Only used for development and user generation, to test receive student user email addresses.
-* `MATCHES_PER_TEAM`: determines how many matches each team will be assigned at every round (should be less than the number of teams - 1)
+* `MATCHES_PER_TEAM`: determines how many matches each team will be assigned at every round (should be strictly less than the number of teams)
 * `MATCHES_PER_PAGE`: determines the number of matches to display on the `/index` page
 * `MAX_CONTENT_LENGTH`: the maximum number of **mega** bytes any uploaded archives should not exceed.
-* `UPLOAD_FOLDER` and `TEMPORARY_UPLOAD_FOLDER`: the name of the folders to save students files to (expected to already be created)
+* `UPLOAD_FOLDER` and `TEMPORARY_UPLOAD_FOLDER`: the name of the folders to save students files to.
 * `NB_CLASSES`: the number of possible classes the students are expected to make classification for (the number of grid cell id for Secretstroll).
 * `DEFENCE_COLUMNS`: a string with the comma separated column names the uploaded network traces should have.
 * `ATTACK_COLUMNS`: a string with the comma separated column names the uploaded trace classification should have. Will be appended with `proba_class_i` for `i` in `{1..NB_CASSES}` to hold the probability classification that should output the classifier.
@@ -102,7 +102,7 @@ Student should first create an account on the `http://127.0.0.1:5000/register` p
 
 ## User (admin) guide
 
-The admin account should be created directly on the server side. This can be done with:
+If you use the script described in [test db population](#test-db-population), you will already have an admin account named `admin` with password `admin`. Otherwise, the admin account should be created directly on the server side. This can be done with:
 
 ```bash
 flask shell
@@ -134,7 +134,7 @@ python3 test.py
 
 ### Test db population
 
-The following commands allow to properly flush all the database data and populate 10 fake users in 5 different teams, all with password `admin`. ⚠️ This can't be reverted, use with care:
+The following commands allow to properly flush all the database data and populate 10 fake users in 5 different teams plus and admin user named `admin` (in no team), all with password `admin`. ⚠️ This can't be reverted, use with care:
 
 ```bash
 flask shell
@@ -213,7 +213,7 @@ The hierarchy of this code follows the standard hierarchy of Flask application, 
   * [`app/forms.py`](app/forms.py): creation of the web forms with Flask WTForm module
   * [`app/errors.py`](app/errors.py): handlers of HTTP errors for Flask app
   * [`app/cached_items.py`](app/cached_items.py): contains the objects used for caching (currently, only the leaderboard items in order to prevent triggering re-computation)
-  * [`app/tasks_control.py`](app/tasks_control.py): contains the celery tasks for handling control message, currently, mail sending
+  * [`app/tasks_control.py`](app/tasks_control.py): contains the celery tasks for handling control message, currently, email sending
   * [`app/tasks_defence.py`](app/tasks_defence.py): contains the celery tasks for handling the student's upload of defence trace
   * [`app/tasks_attack.py`](app/tasks_attack.py): contains the celery tasks for handling the student's upload of attack classification
   * [`app/templates`](app/templates/): contains the HTML templates rendered with the flask Jinja engine.
