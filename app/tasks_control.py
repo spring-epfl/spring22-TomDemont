@@ -1,7 +1,7 @@
 """Defines the tasks and jobs triggered for the control aspects of the application."""
 
 
-from smtplib import SMTPServerDisconnected
+from smtplib import SMTPAuthenticationError, SMTPServerDisconnected
 from typing import Any
 
 from flask_mail import Message
@@ -36,4 +36,6 @@ def send_mail(
         try:
             mail.send(msg)
         except SMTPServerDisconnected:
+            print("Please, verify your connection parameters for mail support", flush=True)
+        except SMTPAuthenticationError:
             print("Please, verify your connection parameters for mail support", flush=True)

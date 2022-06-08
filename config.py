@@ -22,7 +22,7 @@ class Config(object):
     MAIL_PASSWORD = os.environ.get("MAIL_PASSWORD")
     ADMIN = os.environ.get("ADMIN")
     MAIL_DEFAULT_SENDER = os.environ.get("MAIL_DEFAULT_SENDER")
-    MAIL_TEST_RECEIVER_FORMAT = "tom.demont+{}@epfl.ch"  # for testing and generating fake user database, should not be kept on deployment
+    MAIL_TEST_RECEIVER_FORMAT = os.environ.get("MAIL_TEST_RECEIVER_FORMAT") # for testing and generating fake user database, should not be kept on deployment
     MATCHES_PER_TEAM = int(os.environ.get("MATCHES_PER_TEAM") or 3)
     MATCHES_PER_PAGE = int(os.environ.get("MATCHES_PER_PAGE") or 40 * MATCHES_PER_TEAM)
     DEFENCE_PHASE = True  # for development, should be set to False at startup. Expected to be modifiable at runtime
