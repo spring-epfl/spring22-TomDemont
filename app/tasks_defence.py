@@ -204,6 +204,10 @@ def treat_uploaded_defence(filename: str, user_id: int) -> None:
                 round=app.config["ROUND"],
             )
             datasets = split_train_test_set(df)
+            # we save the file to the upload folder
+            upload_path = os.path.join(app.root_path, app.config["UPLOAD_FOLDER"])
+            if not os.path.exists(upload_path):
+                os.mkdir(upload_path)
             for fname_format, dataframe in zip(
                 [
                     "TEST_FILENAME_FORMAT",
