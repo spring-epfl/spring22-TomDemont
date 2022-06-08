@@ -18,5 +18,5 @@ def make_shell_context():
         "treat_uploaded_defence": treat_uploaded_defence,
         "treat_uploaded_attack": treat_uploaded_attack,
         "send_mail": send_mail,
-        "populate_fake_users": populate_test_users,
+        "populate_test_users": populate_test_users,
     }
