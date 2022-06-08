@@ -38,14 +38,13 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-To have a smooth first startup, it is recommended to download first the [Redis](https://redis.io/) message broker with the following scripts that installs it in a new `redis-stable` folder:
+Mail support is an important part of the feedback given on uploaded files by students. In order to benefit from these, you can set the following environment variable this way (see [changing parameters](#changing-parameters) for more details), change the parameters between `[]` to yours for a config with EPFL email:
 
 ```bash
-./run-redis
-# once installed, you can stop the script with Ctrl-C
+echo -e 'MAIL_SERVER="mail.epfl.ch"\nMAIL_PORT=465\nMAIL_USE_SSL=True\nMAIL_USERNAME="[gaspar-username]"\nMAIL_PASSWORD="[gaspar-password]"\nMAIL_DEFAULT_SENDER="[your_first_name.your_family_name]@epfl.ch"\nMAIL_TEST_RECEIVER_FORMAT="[your_first_name.your_family_name]+{}@epfl.ch"' > .env
 ```
 
-Finally, the next script starts (and installs in the folder if not already installed) the [Redis](https://redis.io/) message broker, starts the [Celery](https://docs.celeryq.dev/en/stable/index.html) distributed task queue and the Flask web server in development mode:
+Finally, the next script starts (and installs in the folder `redis-stable` if not already installed) the [Redis](https://redis.io/) message broker, starts the [Celery](https://docs.celeryq.dev/en/stable/index.html) distributed task queue and the Flask web server in development mode:
 
 ```bash
 ./run-srs.sh
