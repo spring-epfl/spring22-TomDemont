@@ -12,10 +12,10 @@ It is possible, in the initial version of the application, to obtain a very effi
 
 This fulfils multiple pedagogical goals:
 
-* Provides students utility measures for different implementations and see the utility/privacy trade-off interactively
-* Give students matches with train and test sets to train a model and get meaningful performance metrics for the quality of their classifier against others' implementation
-* Show students a taste of an interactive and live attack-defence based study of privacy preserving mechanisms' implementation
-* Give to the course team an automated tool to observe and manage student's competition
+* Provides students utility measures for different implementations and observe the utility/privacy trade-off interactively
+* Assign matches to students with train and test sets to train a model and get meaningful performance metrics for the quality of their classifier against other implementations
+* Give students a taste of an interactive and live attack-defence based study of privacy preserving mechanism implementations
+* Provide to the course team with an automated tool to observe and manage student's competition
 
 This platforms aims to gather the interactive competition aspects of [Kaggle](https://www.kaggle.com/) or [AICrowd](https://www.aicrowd.com/) platforms, while adding the inter-students match aspect to multiply the variety of network traces to attack and evaluate on both the utility and privacy metrics to observe the trade-off inherent to PETs.
 
@@ -73,7 +73,7 @@ For ease of use and avoid exporting this variable with `export FLASK_ENV=develop
 * `MATCHES_PER_PAGE`: determines the number of matches to display on the `/index` page
 * `MAX_CONTENT_LENGTH`: the maximum number of **mega** bytes any uploaded archives should not exceed.
 * `UPLOAD_FOLDER` and `TEMPORARY_UPLOAD_FOLDER`: the name of the folders to save students files to.
-* `NB_CLASSES`: the number of possible classes the students are expected to make classification for (the number of grid cell id for Secretstroll).
+* `NB_CLASSES`: the number of possible classes the students are expected to make classifications for (the number of grid cells for Secretstroll).
 * `DEFENCE_COLUMNS`: a string with the comma separated column names the uploaded network traces should have.
 * `ATTACK_COLUMNS`: a string with the comma separated column names the uploaded trace classification should have. Will be appended with `proba_class_i` for `i` in `{1..NB_CASSES}` to hold the probability classification that should output the classifier.
 * `CELERY_BROKER_URL` and `RESULT_BACKEND`: URLs of the message broker and result backend to use. Initially works with Redis.
@@ -83,21 +83,21 @@ For ease of use and avoid exporting this variable with `export FLASK_ENV=develop
 * `ROWS_PER_CAPTURE`: the minimum number of rows the file holding network trace capture should have for each capture. Can be seen as the minimum number of packets we require to accept a network trace as valid.
 * `LEADERBOARD_CACHE_TIME`: the number of seconds we should cache the leader-board.
 
-For ease of use and avoid exporting this variable with `export ADMIN="cs-523@groupes.epfl.ch"`, these variables can be written in the `.env` file, that will be loaded with the python [`dotenv`](https://pypi.org/project/python-dotenv/) module. All those variables have reasonable default value that should allow the system to run correctly for tests.
+For ease of use and to avoid exporting this variable with `export ADMIN="cs-523@groupes.epfl.ch"`, these variables can be written in the `.env` file, that will be loaded with the python [`dotenv`](https://pypi.org/project/python-dotenv/) module. All these variables have reasonable default value that should allow the system to run correctly for tests.
 
 ## User (student) guide
 
-Student should first create an account on the `http://127.0.0.1:5000/register` page. They can select a team among the already existing ones or create a new one. They won't be able to change their team later. Once done, they can login and reach all the website's content.
+Students should first create an account on the `http://127.0.0.1:5000/register` page. They can select a team among the already existing ones or create a new one. They won't be able to change their team later. Once done, they can login and reach all the website's content.
 
 * They can navigate through pages with the upper navigation bar. We'll see the available menus from left to right.
-* In the home page `http://127.0.0.1:5000/index`, they can see, when available, the matches that should be done once those will be generated. ![home-page](readme_assets/home_page.png)
+* In the home page `http://127.0.0.1:5000/index`, they can see, when available, the matches assigned to them once generated. ![home-page](readme_assets/home_page.png)
 * The `Round: 1` indicates the current round students are in. See [Timeline](#timeline).
 * The leaderboard page allow students to see their score and ranking ![leaderboard](readme_assets/leaderboard.png)
 * The profile page gives access to either, the user information if they have no team, or the team's information. ![team_page](readme_assets/team_page.png)
 * When made available by the admin, users will see an `Upload Defence` button on the top of each page. Students will there have a file upload form where they can send their compressed csv containing the dataframe of their capture in the correct format. ![upload_defence](readme_assets/upload_defence.png)
 * When made available by the admin, students will see an `Attack` button on the top of each page. ![attack](readme_assets/attack.png). There will there be 2 possible actions:
-  * `Download attack`, where they will get a zip file containing zip files for each train set and test set they should provide a classification
-  * Another file upload form where they should be able to upload their classification for the test sets they should've attacked
+  * `Download attack`, where they will get a zip file containing zip files for each train set and test set they should provide a classification for
+  * Another file upload form where they should be able to upload their classification for the test sets they attacked
 * For both attack and defence, see [Testing and toy example](#testing-and-toy-examples) part to learn how to play with these.
 
 ## User (admin) guide
@@ -121,7 +121,7 @@ Adds an admin named `admin` and password `put-the-admin-password`. This user can
 
 * Generate Matches brings to the guide page for generating the matches for a new round. Once the GET request is made, the matches are pushed to the database and students can see those on the home page. Note that currently, the leaderboard is only round-wise: when going to the next round, the leaderboard will be reset (the data is not erased from the database though).
 ![generate_matches](readme_assets/generate_matches.png)
-* Set Phase allows to change the phase between "attack", "defence", none or both. When reaching the Set Phase page, automatically the phase is set to none: no student can upload attack or defence, to have a buffer state and avoid having inconsistencies.
+* Set Phase allows to change the phase between "attack", "defence", none or both. When reaching the Set Phase page, the phase is automatically set to `"None"`: no student can upload attack or defence, to have a buffer state and avoid having inconsistencies.
 ![set_phase](readme_assets/set_phase.png)
 
 ## Testing and toy examples
@@ -177,11 +177,11 @@ In order to allow development on top of this project, here's a quick description
 
 ### Timeline
 
-The software is developed following the idea of the timeline described here:
+The software is developed following the idea of the timeline depicted as follows:
 ![timeline.png](readme_assets/timeline.png)
-Note that the multiple round aspect has not been explored in the score computation: the current implementation considers each round independent and resets the leaderboard between each round. However it's totally possible to augment this anc consider aggregation of multiple rounds' scores for the total score calculus. The main modification that should be done is the implementation of a scoring aggregation for multiple rounds in [`app/routes.py`](app/routes.py) and [`app/models.py`](app/models.py).
+Note that the multiple round feature has not been included in the score computation: the current implementation considers each round to be independent and resets the leaderboard between each round. However it's totally possible to augment this and consider aggregation of multiple round scores for the total score computation. The main modification that should be done is the implementation of a scoring aggregation for multiple rounds in [`app/routes.py`](app/routes.py) and [`app/models.py`](app/models.py).
 
-This timeline suggests that we separate strictly the attack and defence phases. Indeed, the software could support both being available at the same time, but our pondering on the pedagogical impact lead us to think that this would overwhelm students. Therefore, splitting both phases allows to concentrate on the correction and implementation of the specific part. Students will be able to clearly see both aspects evolving one after the other, earning points with good utility score but taking care of not being "too easy to attack", and leading to giving "privacy leakage" points to adversaries.
+This timeline suggests that we separate strictly the attack and defence phases. Indeed, the software could support both being available at the same time, but our consideration of the pedagogical impact lead us to think that this could overwhelm students. Therefore, splitting both phases allows to focus on the improvement and implementation of the specific part. Students will be able to clearly see both aspects evolving one after the other, earning points with good utility score but taking care of not being "too easy to attack", and leading to giving "privacy leakage" points to adversaries.
 
 ### Data model
 
@@ -193,7 +193,7 @@ This describes the current relational model between the entities defined with [S
 
 ### Code hierarchy
 
-The hierarchy of this code follows the standard hierarchy of Flask application, without the need for Blueprint patterns. Here's a quick description of the different file and their purposes:
+The hierarchy of this code follows the standard hierarchy of Flask application, without the need for Blueprint patterns. Here's a quick description of the different files and their purposes:
 
 * [`srs.py`](srs.py): the application's location, loaded with the command `flask run`
 * [`test.py`](test.py): the unit tests for the application
