@@ -180,7 +180,7 @@ class Team(db.Model):
             sum(
                 [attack.results.aggregated_result() for attack in self_most_recent_atks]
             )
-            / len(self_most_recent_atks)
+            / len(self_most_recent_atks) # we compute the average aggregated result when all matches are done
             if len(self_most_recent_atks) == Match.nb_matches_in_round(round, self.id)
             else "Some attacks remain to do"
         )
