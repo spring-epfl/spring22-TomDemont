@@ -105,7 +105,7 @@ You can freely change the parameters of the application to adapt it to your need
 * `.flaskenv`: contains the public environment variables like `FLASK_ENV`. Should be versioned.
 * `.env`: contains all the other environment variables. Should not be versioned and kept private.
 
-Writing your environment variables there will let them be loaded with the python [`dotenv`](https://pypi.org/project/python-dotenv/) module and you won't have to export them on every Shell session. See [flask environment variables documentation](https://flask.palletsprojects.com/en/2.1.x/cli/#environment-variables-from-dotenv). All these variables have reasonable default value that should allow the system to run correctly for tests.
+Writing your environment variables there will let them be loaded with the python [`dotenv`](https://pypi.org/project/python-dotenv/) module and you won't have to export them on every Shell session. See [flask environment variables documentation](https://flask.palletsprojects.com/en/2.1.x/cli/#environment-variables-from-dotenv). In order to fully run the application, you only have to set your mail parameters in the `.env` file, see [quick launch](#quick-launch).
 
 #### Technical parameters
 
