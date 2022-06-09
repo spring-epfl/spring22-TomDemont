@@ -180,8 +180,11 @@ class Team(db.Model):
             sum(
                 [attack.results.aggregated_result() for attack in self_most_recent_atks]
             )
-            / len(self_most_recent_atks) # we compute the average aggregated result when all matches are done
+            / len(
+                self_most_recent_atks
+            )  # we compute the average aggregated result when all matches are done
             if len(self_most_recent_atks) == Match.nb_matches_in_round(round, self.id)
+            and len(self_most_recent_atks) != 0
             else "Some attacks remain to do"
         )
 
@@ -352,7 +355,7 @@ class AttackResult:
 
     def aggregated_result(self) -> float:
         """Returns an aggregated value for the attack performance metric. Magic number 1000 for displaying nice score values in the context of Secret Race Strolling"""
-        return 1000 * self.roc_auc_score * self.accuracy
+        return 10 * self.roc_auc_score * self.accuracy
 
 
 class Attack(db.Model):
