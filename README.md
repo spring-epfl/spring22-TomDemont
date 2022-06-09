@@ -19,6 +19,52 @@ This fulfils multiple pedagogical goals:
 
 This platforms aims to gather the interactive competition aspects of [Kaggle](https://www.kaggle.com/) or [AICrowd](https://www.aicrowd.com/) platforms, while adding the inter-students match aspect to multiply the variety of network traces to attack and evaluate on both the utility and privacy metrics to observe the trade-off inherent to PETs.
 
+In order to allow development on top of this project, here's a quick description of some aspects of the architecture of the software.
+
+### Timeline
+
+The software is developed following the idea of the timeline depicted as follows:
+![timeline.png](readme_assets/timeline.png)
+Note that the multiple round feature has not been included in the score computation: the current implementation considers each round to be independent and resets the leaderboard between each round. However it's totally possible to augment this and consider aggregation of multiple round scores for the total score computation. The main modification that should be done is the implementation of a scoring aggregation for multiple rounds in [`app/routes.py`](app/routes.py) and [`app/models.py`](app/models.py).
+
+This timeline suggests that we separate strictly the attack and defence phases. Indeed, the software could support both being available at the same time, but our consideration of the pedagogical impact lead us to think that this could overwhelm students. Therefore, splitting both phases allows to focus on the improvement and implementation of the specific part. Students will be able to clearly see both aspects evolving one after the other, earning points with good utility score but taking care of not being "too easy to attack", and leading to giving "privacy leakage" points to adversaries.
+
+### Data model
+
+The database model can be found under `srs_model.xml` and can be visualized on the tool [https://ondras.zarovi.cz/sql/demo/](https://ondras.zarovi.cz/sql/demo/).
+
+![model](readme_assets/srs_model.png)
+
+This describes the current relational model between the entities defined with [SQLAlchemy](https://www.sqlalchemy.org/) ORM module in the [`app/models.py`](app/models.py) file. This model allows us to follow the constructive structure of the software's entities: we create user, belonging to team, uploading their Defence. After that, we assign matches where we'll produce eventually many instances of attacks per match, in order to maximize the score obtained in the match.
+
+### Code hierarchy
+
+The hierarchy of this code follows the standard hierarchy of Flask application, without the need for Blueprint patterns. Here's a quick description of the different files and their purposes:
+
+* [`srs.py`](srs.py): the application's location, loaded with the command `flask run`
+* [`test.py`](test.py): the unit tests for the application
+* [`config.py`](config.py): the `Config` object, passed at app module initialization
+* [`db_scripts.py`](db_scripts.py): the scripts used for flushing db and putting test users. See [Testing and toy examples](#testing-and-toy-examples)
+* [`run-redis.sh`](run-redis.sh): scripts dealing with installation and running of Redis message broker
+* [`run-srs.sh`](run-srs.sh): launch script. See [Launch instructions](#launch-instructions)
+* [`app.db`](app.db): the sqlite database file holding the database
+* [`.flaskenv`](.flaskenv): file holding Flask related environment variables. See [Changing parameters](#changing-parameters)
+* [`migrations`](migrations): folder created at database initialization. [This post](https://blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-iv-database) is helpful to understand its purpose and how to initialize/migrate the database.
+* [`logs`](logs): holds the logs created by the app
+* [`attack_defence_test_scripts`](attack_defence_test_scripts): contains scripts to test the functioning of system in real conditions. See [Testing and toy examples](#testing-and-toy-examples)
+* [`app`](app): the module containing all the app system
+  * [`app/__init__.py`](app/__init__.py): initializes the app module and all the flask extension modules it uses
+  * [`app/routes.py`](app/routes.py): main router for the application. Entrypoint for all the HTTP queries made to the server
+  * [`app/models.py`](app/models.py): creation with SQLAlchemy of the object relational model for the application's entities, along with the creation of database interaction functions
+  * [`app/forms.py`](app/forms.py): creation of the web forms with Flask WTForm module
+  * [`app/errors.py`](app/errors.py): handlers of HTTP errors for Flask app
+  * [`app/cached_items.py`](app/cached_items.py): contains the objects used for caching (currently, only the leaderboard items in order to prevent triggering re-computation)
+  * [`app/tasks_control.py`](app/tasks_control.py): contains the celery tasks for handling control message, currently, email sending
+  * [`app/tasks_defence.py`](app/tasks_defence.py): contains the celery tasks for handling the student's upload of defence trace
+  * [`app/tasks_attack.py`](app/tasks_attack.py): contains the celery tasks for handling the student's upload of attack classification
+  * [`app/templates`](app/templates/): contains the HTML templates rendered with the flask Jinja engine.
+  * [`app/uploads`](app/uploads/) and [`app/temp_uploads`](app/temp_uploads/): contains the files uploaded by students. `uploads` aims to keep the train, test and verification sets for the whole competition. `temp_uploads` only holds the raw uploaded files in order to let the celery workers have access to it and perform their tasks. No file should be kept after the tasks
+
 ## Launch instructions
 
 ### Quick launch
@@ -54,14 +100,23 @@ After a few seconds, the server should be running on `http://localhost:5000`. Al
 
 ### Changing parameters
 
-You can freely change the parameters of the application to adapt it to your needs. The modifiable environment variables are:
+You can freely change the parameters of the application to adapt it to your needs. We sorted those by categories. In order to avoid having to export manually all these variables with `export FLASK_ENV=development`, you can create 2 files:
+
+* `.flaskenv`: contains the public environment variables like `FLASK_ENV`. Should be versioned.
+* `.env`: contains all the other environment variables. Should not be versioned and kept private.
+
+Writing your environment variables there will let them be loaded with the python [`dotenv`](https://pypi.org/project/python-dotenv/) module and you won't have to export them on every Shell session. See [flask environment variables documentation](https://flask.palletsprojects.com/en/2.1.x/cli/#environment-variables-from-dotenv). All these variables have reasonable default value that should allow the system to run correctly for tests.
+
+#### Technical parameters
 
 * `FLASK_ENV`: either development, testing or production. See [FLASK_ENV doc](https://flask.palletsprojects.com/en/2.1.x/config/#ENV)
-
-For ease of use and avoid exporting this variable with `export FLASK_ENV=development`, this variable can be written in the `.flaskenv` file.
-
 * `SECRET_KEY`: used to sign session cookies. See [SECRET_KEY doc](https://flask.palletsprojects.com/en/2.1.x/config/#SECRET_KEY)
 * `DATABASE_URL`: the URL of the Database. See [SQLALCHEMY_DATABASE_URI doc](https://flask-sqlalchemy.palletsprojects.com/en/2.x/config/#configuration-keys)
+* `CELERY_BROKER_URL` and `RESULT_BACKEND`: URLs of the message broker and result backend to use. Initially works with Redis.
+* `UPLOAD_FOLDER` and `TEMPORARY_UPLOAD_FOLDER`: the names of the folders to save students files to.
+
+#### Mail support parameters
+
 * `MAIL_SERVER` and `MAIL_PORT`: the server and port to use for outgoing email support.
 * `MAIL_USE_TLS`: whether the outgoing email should be sent using STARTTLS. True if the variable is set to anything non-empty.
 * `MAIL_USE_SSL`: whether the outgoing email should be sent using SSL. True if the variable is set to anything non-empty.
@@ -69,21 +124,32 @@ For ease of use and avoid exporting this variable with `export FLASK_ENV=develop
 * `ADMIN`: the admin email address for sending logging errors
 * `MAIL_DEFAULT_SENDER`: the email sender for email support. See [Flask-Mail](https://pythonhosted.org/Flask-Mail/#configuring-flask-mail)
 * `MAIL_TEST_RECEIVER_FORMAT`: a Python format string for an email address using [plussed addressed email](https://bitwarden.com/help/generator/#username-types). Only used for development and user generation, to test receive student user email addresses.
-* `MATCHES_PER_TEAM`: determines how many matches each team will be assigned at every round (should be strictly less than the number of teams)
+
+#### Appearance
+
 * `MATCHES_PER_PAGE`: determines the number of matches to display on the `/index` page
-* `MAX_CONTENT_LENGTH`: the maximum number of **mega** bytes any uploaded archives should not exceed.
-* `UPLOAD_FOLDER` and `TEMPORARY_UPLOAD_FOLDER`: the name of the folders to save students files to.
+
+#### Competition design
+
+* `MATCHES_PER_TEAM`: determines how many matches each team will be assigned at every round (should be strictly less than the number of teams)
 * `NB_CLASSES`: the number of possible classes the students are expected to make classifications for (the number of grid cells for Secretstroll).
-* `DEFENCE_COLUMNS`: a string with the comma separated column names the uploaded network traces should have.
-* `ATTACK_COLUMNS`: a string with the comma separated column names the uploaded trace classification should have. Will be appended with `proba_class_i` for `i` in `{1..NB_CASSES}` to hold the probability classification that should output the classifier.
-* `CELERY_BROKER_URL` and `RESULT_BACKEND`: URLs of the message broker and result backend to use. Initially works with Redis.
 * `NB_TRACES_TO_CLASSIFY`: the number of traces students should make a classification for, the size of the test set.
+
+#### Trace verification
+
+* `MAX_CONTENT_LENGTH`: the maximum number of **mega** bytes any uploaded archives should not exceed.
 * `MEAN_NB_REP_PER_CLASS`: the expected mean amount of network traces to collect per grid cell id query in the Secretstroll system. Corresponds to the number of times the script `attack_defence_test_scripts/capture.sh` should be run by a student.
 * `DEVIATION_NB_REP_PER_CLASS`: the accepted number of amount of traces traces per grid cell id deviating from the mean. Captures being difficult and not always perfect, students having `MEAN_NB_REP_PER_CLASS`±`DEVIATION_NB_REP_PER_CLASS` network traces for the capture on grid cell id `i` have capture accepted by the system.
 * `ROWS_PER_CAPTURE`: the minimum number of rows the file holding network trace capture should have for each capture. Can be seen as the minimum number of packets we require to accept a network trace as valid.
+
+#### Leaderboard
+
 * `LEADERBOARD_CACHE_TIME`: the number of seconds we should cache the leader-board.
 
-For ease of use and to avoid exporting this variable with `export ADMIN="cs-523@groupes.epfl.ch"`, these variables can be written in the `.env` file, that will be loaded with the python [`dotenv`](https://pypi.org/project/python-dotenv/) module. All these variables have reasonable default value that should allow the system to run correctly for tests.
+#### Filename formats
+
+* `DEFENCE_COLUMNS`: a string with the comma separated column names the uploaded network traces should have.
+* `ATTACK_COLUMNS`: a string with the comma separated column names the uploaded trace classification should have. Will be appended with `proba_class_i` for `i` in `{1..NB_CASSES}` to hold the probability classification that should output the classifier.
 
 ## User (student) guide
 
@@ -170,54 +236,6 @@ python3 fingerprint.py 1 4 5
 ```
 
 This will create a file named `my_classification.csv.zip` that can be uploaded to the attack upload form. As in [Test defence upload](#test-defence-upload), you can receive the confirmation email and see your results on the team page.
-
-## Software architecture
-
-In order to allow development on top of this project, here's a quick description of some aspects of the architecture of the software.
-
-### Timeline
-
-The software is developed following the idea of the timeline depicted as follows:
-![timeline.png](readme_assets/timeline.png)
-Note that the multiple round feature has not been included in the score computation: the current implementation considers each round to be independent and resets the leaderboard between each round. However it's totally possible to augment this and consider aggregation of multiple round scores for the total score computation. The main modification that should be done is the implementation of a scoring aggregation for multiple rounds in [`app/routes.py`](app/routes.py) and [`app/models.py`](app/models.py).
-
-This timeline suggests that we separate strictly the attack and defence phases. Indeed, the software could support both being available at the same time, but our consideration of the pedagogical impact lead us to think that this could overwhelm students. Therefore, splitting both phases allows to focus on the improvement and implementation of the specific part. Students will be able to clearly see both aspects evolving one after the other, earning points with good utility score but taking care of not being "too easy to attack", and leading to giving "privacy leakage" points to adversaries.
-
-### Data model
-
-The database model can be found under `srs_model.xml` and can be visualized on the tool [https://ondras.zarovi.cz/sql/demo/](https://ondras.zarovi.cz/sql/demo/).
-
-![model](readme_assets/srs_model.png)
-
-This describes the current relational model between the entities defined with [SQLAlchemy](https://www.sqlalchemy.org/) ORM module in the [`app/models.py`](app/models.py) file. This model allows us to follow the constructive structure of the software's entities: we create user, belonging to team, uploading their Defence. After that, we assign matches where we'll produce eventually many instances of attacks per match, in order to maximize the score obtained in the match.
-
-### Code hierarchy
-
-The hierarchy of this code follows the standard hierarchy of Flask application, without the need for Blueprint patterns. Here's a quick description of the different files and their purposes:
-
-* [`srs.py`](srs.py): the application's location, loaded with the command `flask run`
-* [`test.py`](test.py): the unit tests for the application
-* [`config.py`](config.py): the `Config` object, passed at app module initialization
-* [`db_scripts.py`](db_scripts.py): the scripts used for flushing db and putting test users. See [Testing and toy examples](#testing-and-toy-examples)
-* [`run-redis.sh`](run-redis.sh): scripts dealing with installation and running of Redis message broker
-* [`run-srs.sh`](run-srs.sh): launch script. See [Launch instructions](#launch-instructions)
-* [`app.db`](app.db): the sqlite database file holding the database
-* [`.flaskenv`](.flaskenv): file holding Flask related environment variables. See [Changing parameters](#changing-parameters)
-* [`migrations`](migrations): folder created at database initialization. [This post](https://blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-iv-database) is helpful to understand its purpose and how to initialize/migrate the database.
-* [`logs`](logs): holds the logs created by the app
-* [`attack_defence_test_scripts`](attack_defence_test_scripts): contains scripts to test the functioning of system in real conditions. See [Testing and toy examples](#testing-and-toy-examples)
-* [`app`](app): the module containing all the app system
-  * [`app/__init__.py`](app/__init__.py): initializes the app module and all the flask extension modules it uses
-  * [`app/routes.py`](app/routes.py): main router for the application. Entrypoint for all the HTTP queries made to the server
-  * [`app/models.py`](app/models.py): creation with SQLAlchemy of the object relational model for the application's entities, along with the creation of database interaction functions
-  * [`app/forms.py`](app/forms.py): creation of the web forms with Flask WTForm module
-  * [`app/errors.py`](app/errors.py): handlers of HTTP errors for Flask app
-  * [`app/cached_items.py`](app/cached_items.py): contains the objects used for caching (currently, only the leaderboard items in order to prevent triggering re-computation)
-  * [`app/tasks_control.py`](app/tasks_control.py): contains the celery tasks for handling control message, currently, email sending
-  * [`app/tasks_defence.py`](app/tasks_defence.py): contains the celery tasks for handling the student's upload of defence trace
-  * [`app/tasks_attack.py`](app/tasks_attack.py): contains the celery tasks for handling the student's upload of attack classification
-  * [`app/templates`](app/templates/): contains the HTML templates rendered with the flask Jinja engine.
-  * [`app/uploads`](app/uploads/) and [`app/temp_uploads`](app/temp_uploads/): contains the files uploaded by students. `uploads` aims to keep the train, test and verification sets for the whole competition. `temp_uploads` only holds the raw uploaded files in order to let the celery workers have access to it and perform their tasks. No file should be kept after the tasks
 
 ## Credits
 
