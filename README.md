@@ -146,7 +146,7 @@ Writing your environment variables there will let them be loaded with the python
 
 * `LEADERBOARD_CACHE_TIME`: the number of seconds we should cache the leader-board.
 
-#### Filename formats
+#### Data formats
 
 * `DEFENCE_COLUMNS`: a string with the comma separated column names the uploaded network traces should have.
 * `ATTACK_COLUMNS`: a string with the comma separated column names the uploaded trace classification should have. Will be appended with `proba_class_i` for `i` in `{1..NB_CASSES}` to hold the probability classification that should output the classifier.

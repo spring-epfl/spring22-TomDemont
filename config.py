@@ -94,7 +94,7 @@ class Config(object):
 
     """
     ###################
-    FILENAME FORMATS
+    FILENAME & FORMATS
     ###################
     """
 
