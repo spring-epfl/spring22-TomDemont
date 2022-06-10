@@ -52,6 +52,9 @@ The hierarchy of this code follows the standard hierarchy of Flask application, 
 * [`migrations`](migrations): folder created at database initialization. [This post](https://blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-iv-database) is helpful to understand its purpose and how to initialize/migrate the database.
 * [`logs`](logs): holds the logs created by the app
 * [`attack_defence_test_scripts`](attack_defence_test_scripts): contains scripts to test the functioning of system in real conditions. See [Testing and toy examples](#testing-and-toy-examples)
+  * [`attack_defence_test_scripts/capture.sh`](attack_defence_test_scripts/capture.sh): shell script managing the capture of network trace in the Secretstroll client container. Captures once the queries on each grid cell
+  * [`attack_defence_test_scripts/fingerprinting.py`](attack_defence_test_scripts/fingerprinting.py): python script using a Random Forest classifier to determine the grid cell hidden behind the features of some test set vectors
+  * [`attack_defence_test_scripts/test_defence.csv.zip`](attack_defence_test_scripts/test_defence.csv.zip): compressed csv file containing the capture data in the correct format for being uploaded as defence trace
 * [`app`](app): the module containing all the app system
   * [`app/__init__.py`](app/__init__.py): initializes the app module and all the flask extension modules it uses
   * [`app/routes.py`](app/routes.py): main router for the application. Entrypoint for all the HTTP queries made to the server

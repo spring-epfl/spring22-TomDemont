@@ -1,4 +1,5 @@
 #!/bin/bash
+# Script that should be used by students to collect a network trace in a .pcap file for 100 cells
 ### ASSUMES A RUNNING SERVER
 
 # we go back to the main folder to have the scripts and keys
