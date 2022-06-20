@@ -189,7 +189,7 @@ class Team(db.Model):
         )
 
     def total_score(self, round) -> Union[float, str]:
-        """Returns either the aggregated performance score of this team in the round, or the error message to be displayed. The total score is the product of the utility and attack performance metrics. We can see it as (accuracy*roc_auc_score)/(time_consumption*bandwidth_consumption). If not all attacks are done, the attack perf score is set to 1.0 (this should be less than a random classifier's performance with the current settings and for secretstroll application)"""
+        """Returns either the aggregated performance score of this team in the round, or the error message to be displayed. The total score is the product of the utility and attack performance metrics. We can see it as (roc_auc_score)/(time_consumption*bandwidth_consumption). If not all attacks are done, the attack perf score is set to 1.0 (this should be less than a random classifier's performance with the current settings and for secretstroll application)"""
         atk_perf = self.attack_performance(round)
         util_score = self.utility_score(round)
         if isinstance(util_score, float):
@@ -354,8 +354,8 @@ class AttackResult:
         return {"accuracy": self.accuracy, "roc_auc_score": self.roc_auc_score}
 
     def aggregated_result(self) -> float:
-        """Returns an aggregated value for the attack performance metric. Magic number 1000 for displaying nice score values in the context of Secret Race Strolling"""
-        return 10 * self.roc_auc_score * self.accuracy
+        """Returns an aggregated value for the attack performance metric. Magic number 10 for displaying nice score values in the context of Secret Race Strolling"""
+        return 10 * self.roc_auc_score
 
 
 class Attack(db.Model):
