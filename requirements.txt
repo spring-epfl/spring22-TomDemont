@@ -43,7 +43,6 @@ redis==4.6.0
 scikit-learn==1.2.2
 scipy==1.11.1
 six==1.16.0
-sklearn==0.0.post5
 SQLAlchemy==2.0.17
 threadpoolctl==3.1.0
 tomli==2.0.1
